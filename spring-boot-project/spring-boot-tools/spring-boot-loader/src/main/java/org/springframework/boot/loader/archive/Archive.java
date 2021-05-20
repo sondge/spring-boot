@@ -16,16 +16,18 @@
 
 package org.springframework.boot.loader.archive;
 
+import org.springframework.boot.loader.Launcher;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.jar.Manifest;
 
-import org.springframework.boot.loader.Launcher;
-
 /**
  * An archive that can be launched by the {@link Launcher}.
+ *
+ * 一个可以被 {@link Launcher} 运行的镜像
  *
  * @author Phillip Webb
  * @since 1.0.0
@@ -35,6 +37,8 @@ public interface Archive extends Iterable<Archive.Entry>, AutoCloseable {
 
 	/**
 	 * Returns a URL that can be used to load the archive.
+	 *
+	 * 可以被加载 archive 使用的 URL
 	 * @return the archive URL
 	 * @throws MalformedURLException if the URL is malformed
 	 */
@@ -42,6 +46,8 @@ public interface Archive extends Iterable<Archive.Entry>, AutoCloseable {
 
 	/**
 	 * Returns the manifest of the archive.
+	 *
+	 * 返回镜像的 Mainfest
 	 * @return the manifest
 	 * @throws IOException if the manifest cannot be read
 	 */
@@ -49,6 +55,8 @@ public interface Archive extends Iterable<Archive.Entry>, AutoCloseable {
 
 	/**
 	 * Returns nested {@link Archive}s for entries that match the specified filter.
+	 *
+	 * 根据指定的匹配返回最近的 镜像
 	 * @param filter the filter used to limit entries
 	 * @return nested archives
 	 * @throws IOException if nested archives cannot be read
@@ -72,12 +80,16 @@ public interface Archive extends Iterable<Archive.Entry>, AutoCloseable {
 
 		/**
 		 * Returns {@code true} if the entry represents a directory.
+		 *
+		 * 返回指定的实体是否是文件
 		 * @return if the entry is a directory
 		 */
 		boolean isDirectory();
 
 		/**
 		 * Returns the name of the entry.
+		 *
+		 * 返回这个实体的名称
 		 * @return the name of the entry
 		 */
 		String getName();
@@ -91,6 +103,8 @@ public interface Archive extends Iterable<Archive.Entry>, AutoCloseable {
 
 		/**
 		 * Apply the jar entry filter.
+		 *
+		 * 应用这个 jar 实体过滤器
 		 * @param entry the entry to filter
 		 * @return {@code true} if the filter matches
 		 */

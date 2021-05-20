@@ -22,32 +22,52 @@ import org.springframework.boot.loader.archive.Archive;
  * {@link Launcher} for JAR based archives. This launcher assumes that dependency jars are
  * included inside a {@code /BOOT-INF/lib} directory and that application classes are
  * included inside a {@code /BOOT-INF/classes} directory.
+ * <p>
+ *
  *
  * @author Phillip Webb
  * @author Andy Wilkinson
  * @since 1.0.0
  */
 public class JarLauncher extends ExecutableArchiveLauncher {
-
+	/**
+	 *应用类所在的目录
+	 */
 	static final String BOOT_INF_CLASSES = "BOOT-INF/classes/";
-
+	/**
+	 * 依赖所在的目录
+	 */
 	static final String BOOT_INF_LIB = "BOOT-INF/lib/";
 
+	/**
+	 * 无参构造
+	 */
 	public JarLauncher() {
 	}
 
+	/**
+	 * 有参构造
+	 */
 	protected JarLauncher(Archive archive) {
 		super(archive);
 	}
 
 	@Override
+	/**
+	 * 是最近的镜像
+	 */
 	protected boolean isNestedArchive(Archive.Entry entry) {
+		// 如果是目录的情况，只要 BOOT-INF/classes 目录
 		if (entry.isDirectory()) {
 			return entry.getName().equals(BOOT_INF_CLASSES);
 		}
+		// 如果是文件的情况，只要 BOOT-INF/lib/ 目录下的 jar 包
 		return entry.getName().startsWith(BOOT_INF_LIB);
 	}
 
+	/**
+	 * 启动对应
+	 */
 	public static void main(String[] args) throws Exception {
 		new JarLauncher().launch(args);
 	}

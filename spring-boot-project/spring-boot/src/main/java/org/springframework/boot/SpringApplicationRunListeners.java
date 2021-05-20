@@ -29,12 +29,18 @@ import org.springframework.util.ReflectionUtils;
 /**
  * A collection of {@link SpringApplicationRunListener}.
  *
+ * SpringApplicationRunListener 集合
+ *
  * @author Phillip Webb
  */
 class SpringApplicationRunListeners {
-
+	/**
+	 * 定义日志信息
+	 */
 	private final Log log;
-
+	/**
+	 *  SpringApplicationRunListener 列表
+	 */
 	private final List<SpringApplicationRunListener> listeners;
 
 	SpringApplicationRunListeners(Log log, Collection<? extends SpringApplicationRunListener> listeners) {

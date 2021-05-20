@@ -16,11 +16,6 @@
 
 package org.springframework.boot.autoconfigure.condition;
 
-import java.security.AccessControlException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import org.springframework.boot.autoconfigure.AutoConfigurationImportFilter;
 import org.springframework.boot.autoconfigure.AutoConfigurationMetadata;
 import org.springframework.boot.autoconfigure.condition.ConditionMessage.Style;
@@ -31,6 +26,11 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
+
+import java.security.AccessControlException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * {@link Condition} and {@link AutoConfigurationImportFilter} that checks for the
@@ -44,11 +44,17 @@ import org.springframework.util.StringUtils;
 class OnClassCondition extends FilteringSpringBootCondition {
 
 	@Override
+	/**
+	 * 来自 FilteringSpringBootCondition 抽象类
+	 */
 	protected final ConditionOutcome[] getOutcomes(String[] autoConfigurationClasses,
 			AutoConfigurationMetadata autoConfigurationMetadata) {
 		// Split the work and perform half in a background thread if more than one
 		// processor is available. Using a single additional thread seems to offer the
 		// best performance. More threads make things worse.
+		// 在后台线程中将工作一分为二，原因是：
+		// 使用单一附加线程，似乎提供最好的性能
+		// 多个线程使事情变得更糟
 		if (Runtime.getRuntime().availableProcessors() > 1) {
 			return resolveOutcomesThreaded(autoConfigurationClasses, autoConfigurationMetadata);
 		}
@@ -61,13 +67,20 @@ class OnClassCondition extends FilteringSpringBootCondition {
 
 	private ConditionOutcome[] resolveOutcomesThreaded(String[] autoConfigurationClasses,
 			AutoConfigurationMetadata autoConfigurationMetadata) {
+		// 在后台线程中将工作一分为二，原因是：
+		// 使用单一附加线程，似乎提供最好的性能
+		// 多个线程使事情变得更糟
 		int split = autoConfigurationClasses.length / 2;
+		// 将前一半，创建一个 OutcomesResolver 对象（新线程）
 		OutcomesResolver firstHalfResolver = createOutcomesResolver(autoConfigurationClasses, 0, split,
 				autoConfigurationMetadata);
+		// 将后一半，创建一个 OutcomesResolver 对象
 		OutcomesResolver secondHalfResolver = new StandardOutcomesResolver(autoConfigurationClasses, split,
 				autoConfigurationClasses.length, autoConfigurationMetadata, getBeanClassLoader());
+		// 执行解析（匹配）
 		ConditionOutcome[] secondHalf = secondHalfResolver.resolveOutcomes();
 		ConditionOutcome[] firstHalf = firstHalfResolver.resolveOutcomes();
+		// 创建 outcomes 结果数组
 		ConditionOutcome[] outcomes = new ConditionOutcome[autoConfigurationClasses.length];
 		System.arraycopy(firstHalf, 0, outcomes, 0, firstHalf.length);
 		System.arraycopy(secondHalf, 0, outcomes, split, secondHalf.length);
@@ -76,9 +89,11 @@ class OnClassCondition extends FilteringSpringBootCondition {
 
 	private OutcomesResolver createOutcomesResolver(String[] autoConfigurationClasses, int start, int end,
 			AutoConfigurationMetadata autoConfigurationMetadata) {
+		// 首先创建 StandardOutcomesResolver 数组
 		OutcomesResolver outcomesResolver = new StandardOutcomesResolver(autoConfigurationClasses, start, end,
 				autoConfigurationMetadata, getBeanClassLoader());
 		try {
+			// 创建一个 ThreadedOutcomesResolver 对象
 			return new ThreadedOutcomesResolver(outcomesResolver);
 		}
 		catch (AccessControlException ex) {
@@ -88,30 +103,41 @@ class OnClassCondition extends FilteringSpringBootCondition {
 
 	@Override
 	public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
+		// 获取上下文类加载器
 		ClassLoader classLoader = context.getClassLoader();
+		// 匹配的信息
 		ConditionMessage matchMessage = ConditionMessage.empty();
+		// 获得 @ConditionalOnClass 注解的属性
 		List<String> onClasses = getCandidates(metadata, ConditionalOnClass.class);
 		if (onClasses != null) {
+			// 执行匹配
 			List<String> missing = filter(onClasses, ClassNameFilter.MISSING, classLoader);
+			// 如果有不匹配的，则返回不匹配信息
 			if (!missing.isEmpty()) {
 				return ConditionOutcome.noMatch(ConditionMessage.forCondition(ConditionalOnClass.class)
 						.didNotFind("required class", "required classes").items(Style.QUOTE, missing));
 			}
+			// 如果匹配，添加到 matchMessage 中
 			matchMessage = matchMessage.andCondition(ConditionalOnClass.class)
 					.found("required class", "required classes")
 					.items(Style.QUOTE, filter(onClasses, ClassNameFilter.PRESENT, classLoader));
 		}
+		// 获得 @ConditionalOnMissingClass 注解的属性
 		List<String> onMissingClasses = getCandidates(metadata, ConditionalOnMissingClass.class);
 		if (onMissingClasses != null) {
+			// 执行匹配
 			List<String> present = filter(onMissingClasses, ClassNameFilter.PRESENT, classLoader);
+			// 如果有不匹配的，则返回不匹配信息
 			if (!present.isEmpty()) {
 				return ConditionOutcome.noMatch(ConditionMessage.forCondition(ConditionalOnMissingClass.class)
 						.found("unwanted class", "unwanted classes").items(Style.QUOTE, present));
 			}
+			// 如果匹配，添加到 matchMessage 中
 			matchMessage = matchMessage.andCondition(ConditionalOnMissingClass.class)
 					.didNotFind("unwanted class", "unwanted classes")
 					.items(Style.QUOTE, filter(onMissingClasses, ClassNameFilter.MISSING, classLoader));
 		}
+		// 返回匹配的结果
 		return ConditionOutcome.match(matchMessage);
 	}
 
@@ -136,40 +162,58 @@ class OnClassCondition extends FilteringSpringBootCondition {
 
 	private interface OutcomesResolver {
 
+		/**
+		 * 执行解析
+		 * @return 解析结果
+		 */
 		ConditionOutcome[] resolveOutcomes();
 
 	}
 
 	private static final class ThreadedOutcomesResolver implements OutcomesResolver {
-
+		/**
+		 * 新起的线程
+		 */
 		private final Thread thread;
-
+		/**
+		 * 条件匹配结果
+		 */
 		private volatile ConditionOutcome[] outcomes;
 
 		private ThreadedOutcomesResolver(OutcomesResolver outcomesResolver) {
+			// 创建一个新的线程
 			this.thread = new Thread(() -> this.outcomes = outcomesResolver.resolveOutcomes());
+			// 启动线程
 			this.thread.start();
 		}
 
 		@Override
 		public ConditionOutcome[] resolveOutcomes() {
+			// 等待线程执行结束
 			try {
 				this.thread.join();
 			}
 			catch (InterruptedException ex) {
 				Thread.currentThread().interrupt();
 			}
+			// 返回结果
 			return this.outcomes;
 		}
 
 	}
 
 	private final class StandardOutcomesResolver implements OutcomesResolver {
-
+		/**
+		 * 所有的配置类的数组
+		 */
 		private final String[] autoConfigurationClasses;
-
+		/**
+		 * 匹配的 {@link #autoConfigurationClasses} 开始位置
+		 */
 		private final int start;
-
+		/**
+		 * 匹配的 {@link #autoConfigurationClasses} 结束位置
+		 */
 		private final int end;
 
 		private final AutoConfigurationMetadata autoConfigurationMetadata;
@@ -192,12 +236,16 @@ class OnClassCondition extends FilteringSpringBootCondition {
 
 		private ConditionOutcome[] getOutcomes(String[] autoConfigurationClasses, int start, int end,
 				AutoConfigurationMetadata autoConfigurationMetadata) {
+			// 创建 ConditionOutcome 结构数组
 			ConditionOutcome[] outcomes = new ConditionOutcome[end - start];
+			// 遍历 autoConfigurationClasses 数组，从 start 到 end
 			for (int i = start; i < end; i++) {
 				String autoConfigurationClass = autoConfigurationClasses[i];
 				if (autoConfigurationClass != null) {
+					// 获得指定自动配置类的 @ConditionalOnClass 注解的要求类
 					String candidates = autoConfigurationMetadata.get(autoConfigurationClass, "ConditionalOnClass");
 					if (candidates != null) {
+						// 回字形匹配
 						outcomes[i - start] = getOutcome(candidates);
 					}
 				}
@@ -207,11 +255,15 @@ class OnClassCondition extends FilteringSpringBootCondition {
 
 		private ConditionOutcome getOutcome(String candidates) {
 			try {
+				// 如果没有,，说明只有一个，直接匹配即可
 				if (!candidates.contains(",")) {
 					return getOutcome(candidates, this.beanClassLoader);
 				}
+				// 如果有,，说明有多个，逐个匹配
 				for (String candidate : StringUtils.commaDelimitedListToStringArray(candidates)) {
+					// 执行匹配
 					ConditionOutcome outcome = getOutcome(candidate, this.beanClassLoader);
+					// 如果存在不匹配，则返回该结果
 					if (outcome != null) {
 						return outcome;
 					}
@@ -224,6 +276,7 @@ class OnClassCondition extends FilteringSpringBootCondition {
 		}
 
 		private ConditionOutcome getOutcome(String className, ClassLoader classLoader) {
+			// 如果忽略的匹配器
 			if (ClassNameFilter.MISSING.matches(className, classLoader)) {
 				return ConditionOutcome.noMatch(ConditionMessage.forCondition(ConditionalOnClass.class)
 						.didNotFind("required class").items(Style.QUOTE, className));

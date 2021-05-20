@@ -16,21 +16,24 @@
 
 package org.springframework.boot;
 
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.AliasFor;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.AliasFor;
-
 /**
  * Indicates that a class provides Spring Boot application
  * {@link Configuration @Configuration}. Can be used as an alternative to the Spring's
  * standard {@code @Configuration} annotation so that configuration can be found
  * automatically (for example in tests).
+ *
+ * 表示一个类提供 Spring Boot 配置类的注解，可以被使用作为一个选择 Spring 的标准 @Configuration 注解。
+ * 这个配置可以被自动发现
  * <p>
  * Application should only ever include <em>one</em> {@code @SpringBootConfiguration} and
  * most idiomatic Spring Boot applications will inherit it from

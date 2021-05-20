@@ -66,7 +66,9 @@ public abstract class ExecutableArchiveLauncher extends Launcher {
 
 	@Override
 	protected List<Archive> getClassPathArchives() throws Exception {
+		// 获取所有的 Archive
 		List<Archive> archives = new ArrayList<>(this.archive.getNestedArchives(this::isNestedArchive));
+		// 后续处理
 		postProcessClassPathArchives(archives);
 		return archives;
 	}

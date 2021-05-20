@@ -44,18 +44,28 @@ import org.springframework.util.ErrorHandler;
  * @since 1.0.0
  */
 public class EventPublishingRunListener implements SpringApplicationRunListener, Ordered {
-
+	/**
+	 * SpringApplcaition 对象
+	 */
 	private final SpringApplication application;
-
+	/**
+	 * 参数数组
+	 */
 	private final String[] args;
-
+	/**
+	 * 事件广播器
+	 */
 	private final SimpleApplicationEventMulticaster initialMulticaster;
-
+	// 构造方法
 	public EventPublishingRunListener(SpringApplication application, String[] args) {
+		// 构建 application
 		this.application = application;
+		// 设置参数数组
 		this.args = args;
+		// 初始化广播器
 		this.initialMulticaster = new SimpleApplicationEventMulticaster();
 		for (ApplicationListener<?> listener : application.getListeners()) {
+			// 将监听器加入
 			this.initialMulticaster.addApplicationListener(listener);
 		}
 	}
@@ -67,17 +77,20 @@ public class EventPublishingRunListener implements SpringApplicationRunListener,
 
 	@Override
 	public void starting() {
+		// 广播时间
 		this.initialMulticaster.multicastEvent(new ApplicationStartingEvent(this.application, this.args));
 	}
 
 	@Override
 	public void environmentPrepared(ConfigurableEnvironment environment) {
+		// 广播环境准备时间
 		this.initialMulticaster
 				.multicastEvent(new ApplicationEnvironmentPreparedEvent(this.application, this.args, environment));
 	}
 
 	@Override
 	public void contextPrepared(ConfigurableApplicationContext context) {
+		// 广播上下文初始化事件
 		this.initialMulticaster
 				.multicastEvent(new ApplicationContextInitializedEvent(this.application, this.args, context));
 	}

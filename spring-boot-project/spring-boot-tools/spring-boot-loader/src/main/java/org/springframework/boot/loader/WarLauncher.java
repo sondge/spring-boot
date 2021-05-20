@@ -23,33 +23,49 @@ import org.springframework.boot.loader.archive.Archive;
  * Supports dependencies in {@code WEB-INF/lib} as well as {@code WEB-INF/lib-provided},
  * classes are loaded from {@code WEB-INF/classes}.
  *
+ * 基于 WAR 包的启动路径
+ *
  * @author Phillip Webb
  * @author Andy Wilkinson
  * @since 1.0.0
  */
 public class WarLauncher extends ExecutableArchiveLauncher {
-
+	/**
+	 *  WEB-INF 路径
+	 */
 	private static final String WEB_INF = "WEB-INF/";
-
+	/**
+	 * WEB-INF 类路径
+	 */
 	private static final String WEB_INF_CLASSES = WEB_INF + "classes/";
-
+	/**
+	 * WEB-INF jar 包路径
+	 */
 	private static final String WEB_INF_LIB = WEB_INF + "lib/";
-
+	/**
+	 * WEB-INFO 包提供路径
+	 */
 	private static final String WEB_INF_LIB_PROVIDED = WEB_INF + "lib-provided/";
-
+	// 构造方法
 	public WarLauncher() {
 	}
 
+	/**
+	 * 构造方法
+	 * @param archive
+	 */
 	protected WarLauncher(Archive archive) {
 		super(archive);
 	}
 
 	@Override
 	public boolean isNestedArchive(Archive.Entry entry) {
+		// 是否是最近的加载镜像
 		if (entry.isDirectory()) {
 			return entry.getName().equals(WEB_INF_CLASSES);
 		}
 		else {
+			// 是否是包路径
 			return entry.getName().startsWith(WEB_INF_LIB) || entry.getName().startsWith(WEB_INF_LIB_PROVIDED);
 		}
 	}

@@ -22,20 +22,28 @@ import java.lang.reflect.Method;
  * Utility class that is used by {@link Launcher}s to call a main method. The class
  * containing the main method is loaded using the thread context class loader.
  *
+ * Launcher 用来调用的主方法
+ *
  * @author Phillip Webb
  * @author Andy Wilkinson
  * @since 1.0.0
  */
 public class MainMethodRunner {
-
+	/**
+	 * 主类名
+	 */
 	private final String mainClassName;
-
+	/**
+	 * 参数数组
+	 */
 	private final String[] args;
 
 	/**
 	 * Create a new {@link MainMethodRunner} instance.
-	 * @param mainClass the main class
-	 * @param args incoming arguments
+	 *
+	 * 创建一个新的实例
+	 * @param mainClass the main class  主类
+	 * @param args incoming arguments 进来的参数
 	 */
 	public MainMethodRunner(String mainClass, String[] args) {
 		this.mainClassName = mainClass;
@@ -43,8 +51,11 @@ public class MainMethodRunner {
 	}
 
 	public void run() throws Exception {
+		// 获取主类
 		Class<?> mainClass = Thread.currentThread().getContextClassLoader().loadClass(this.mainClassName);
+		// 获取 main 方法
 		Method mainMethod = mainClass.getDeclaredMethod("main", String[].class);
+		// 执行调用
 		mainMethod.invoke(null, new Object[] { this.args });
 	}
 

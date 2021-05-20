@@ -16,6 +16,9 @@
 
 package org.springframework.boot.loader.jar;
 
+import org.springframework.boot.loader.data.RandomAccessData;
+import org.springframework.boot.loader.data.RandomAccessDataFile;
+
 import java.io.File;
 import java.io.FilePermission;
 import java.io.IOException;
@@ -32,9 +35,6 @@ import java.util.function.Supplier;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 
-import org.springframework.boot.loader.data.RandomAccessData;
-import org.springframework.boot.loader.data.RandomAccessDataFile;
-
 /**
  * Extended variant of {@link java.util.jar.JarFile} that behaves in the same way but
  * offers the following additional functionality.
@@ -50,31 +50,57 @@ import org.springframework.boot.loader.data.RandomAccessDataFile;
  * @since 1.0.0
  */
 public class JarFile extends AbstractJarFile {
-
+	/**
+	 * 元数据信息的名称
+	 */
 	private static final String MANIFEST_NAME = "META-INF/MANIFEST.MF";
-
+	/**
+	 * 协议处理器
+	 */
 	private static final String PROTOCOL_HANDLER = "java.protocol.handler.pkgs";
-
+	/**
+	 * 处理器所在包
+	 */
 	private static final String HANDLERS_PACKAGE = "org.springframework.boot.loader";
-
+	/**
+	 * 元数据信息
+	 */
 	private static final AsciiBytes META_INF = new AsciiBytes("META-INF/");
-
+	/**
+	 * 签名文件后缀
+	 */
 	private static final AsciiBytes SIGNATURE_FILE_EXTENSION = new AsciiBytes(".SF");
-
+	/**
+	 * 读行为
+	 */
 	private static final String READ_ACTION = "read";
-
+	/**
+	 * 根文件
+	 */
 	private final RandomAccessDataFile rootFile;
-
+	/**
+	 * 路径从根文件
+	 */
 	private final String pathFromRoot;
-
+	/**
+	 * 随机使用权数据
+	 */
 	private final RandomAccessData data;
-
+	/**
+	 * Jar 文件类型
+	 */
 	private final JarFileType type;
-
+	/**
+	 * 路径
+	 */
 	private URL url;
-
+	/**
+	 * 路径字符串
+	 */
 	private String urlString;
-
+	/**
+	 * Jar 文件实体
+	 */
 	private JarFileEntries entries;
 
 	private Supplier<Manifest> manifestSupplier;
@@ -98,6 +124,8 @@ public class JarFile extends AbstractJarFile {
 
 	/**
 	 * Create a new {@link JarFile} backed by the specified file.
+	 *
+	 * 通过指定的文件创建一个新的 {@link JarFile} 返回
 	 * @param file the root jar file
 	 * @throws IOException if the file cannot be read
 	 */
@@ -108,6 +136,8 @@ public class JarFile extends AbstractJarFile {
 	/**
 	 * Private constructor used to create a new {@link JarFile} either directly or from a
 	 * nested entry.
+	 *
+	 * 私有构造方法
 	 * @param rootFile the root jar file
 	 * @param pathFromRoot the name of this file
 	 * @param data the underlying data
@@ -118,9 +148,10 @@ public class JarFile extends AbstractJarFile {
 			throws IOException {
 		this(rootFile, pathFromRoot, data, null, type, null);
 	}
-
+	// 私有构造方法
 	private JarFile(RandomAccessDataFile rootFile, String pathFromRoot, RandomAccessData data, JarEntryFilter filter,
 			JarFileType type, Supplier<Manifest> manifestSupplier) throws IOException {
+		//
 		super(rootFile.getFile());
 		super.close();
 		this.rootFile = rootFile;
@@ -379,9 +410,12 @@ public class JarFile extends AbstractJarFile {
 	 * {@link URLStreamHandler} will be located to deal with jar URLs.
 	 */
 	public static void registerUrlProtocolHandler() {
+		// 获取 URLStreamHandler 的路径
 		String handlers = System.getProperty(PROTOCOL_HANDLER, "");
+		// 将 SpringBoot 自定义的 HANDLERS_PACKAGE(org.springframework.boot.loader) 补充上去
 		System.setProperty(PROTOCOL_HANDLER,
 				("".equals(handlers) ? HANDLERS_PACKAGE : handlers + "|" + HANDLERS_PACKAGE));
+		// 重置已缓存的 URLStreamHandler 处理器们
 		resetCachedUrlHandlers();
 	}
 
@@ -389,6 +423,9 @@ public class JarFile extends AbstractJarFile {
 	 * Reset any cached handlers just in case a jar protocol has already been used. We
 	 * reset the handler by trying to set a null {@link URLStreamHandlerFactory} which
 	 * should have no effect other than clearing the handlers cache.
+	 *
+	 * 重置 URL 中的 URLStreamHandler 的缓存，防止 jar:// 协议对应的 URLStreamHandler 已经创建
+	 * 我们通过设置 URLStreamHandlerFactory 为 null 的方式，清空 URL 中的该缓存。
 	 */
 	private static void resetCachedUrlHandlers() {
 		try {

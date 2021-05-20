@@ -16,6 +16,8 @@
 
 package org.springframework.boot.loader;
 
+import org.springframework.boot.loader.jar.Handler;
+
 import java.io.IOException;
 import java.net.JarURLConnection;
 import java.net.URL;
@@ -25,8 +27,6 @@ import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.util.Enumeration;
 import java.util.jar.JarFile;
-
-import org.springframework.boot.loader.jar.Handler;
 
 /**
  * {@link ClassLoader} used by the {@link Launcher}.
@@ -78,6 +78,7 @@ public class LaunchedURLClassLoader extends URLClassLoader {
 		Handler.setUseFastConnectionExceptions(true);
 		try {
 			try {
+				// 定义包所在的路径
 				definePackageIfNecessary(name);
 			}
 			catch (IllegalArgumentException ex) {
@@ -89,6 +90,7 @@ public class LaunchedURLClassLoader extends URLClassLoader {
 					throw new AssertionError("Package " + name + " has already been defined but it could not be found");
 				}
 			}
+			// 加载类
 			return super.loadClass(name, resolve);
 		}
 		finally {
@@ -105,9 +107,11 @@ public class LaunchedURLClassLoader extends URLClassLoader {
 	private void definePackageIfNecessary(String className) {
 		int lastDot = className.lastIndexOf('.');
 		if (lastDot >= 0) {
+			// 获取类所在的包名
 			String packageName = className.substring(0, lastDot);
 			if (getPackage(packageName) == null) {
 				try {
+					// 定义包
 					definePackage(className, packageName);
 				}
 				catch (IllegalArgumentException ex) {
@@ -127,6 +131,7 @@ public class LaunchedURLClassLoader extends URLClassLoader {
 	private void definePackage(String className, String packageName) {
 		try {
 			AccessController.doPrivileged((PrivilegedExceptionAction<Object>) () -> {
+				// 把类名解析成路径并加上 .class 后缀
 				String packageEntryName = packageName.replace('.', '/') + "/";
 				String classEntryName = className.replace('.', '/') + ".class";
 				for (URL url : getURLs()) {

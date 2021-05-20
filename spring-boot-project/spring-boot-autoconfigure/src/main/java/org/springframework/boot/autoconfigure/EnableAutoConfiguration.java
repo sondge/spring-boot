@@ -16,13 +16,6 @@
 
 package org.springframework.boot.autoconfigure;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -33,6 +26,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.support.SpringFactoriesLoader;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
  * Enable auto-configuration of the Spring Application Context, attempting to guess and
  * configure beans that you are likely to need. Auto-configuration classes are usually
@@ -41,6 +41,7 @@ import org.springframework.core.io.support.SpringFactoriesLoader;
  * {@link TomcatServletWebServerFactory} (unless you have defined your own
  * {@link ServletWebServerFactory} bean).
  * <p>
+ * 在 SpringApplicationContext 开启自动配置，尝试着猜测和配置你需要的 bean
  * When using {@link SpringBootApplication @SpringBootApplication}, the auto-configuration
  * of the context is automatically enabled and adding this annotation has therefore no
  * additional effect.
@@ -68,12 +69,12 @@ import org.springframework.core.io.support.SpringFactoriesLoader;
  *
  * @author Phillip Webb
  * @author Stephane Nicoll
- * @since 1.0.0
  * @see ConditionalOnBean
  * @see ConditionalOnMissingBean
  * @see ConditionalOnClass
  * @see AutoConfigureAfter
  * @see SpringBootApplication
+ * @since 1.0.0
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
@@ -87,6 +88,9 @@ public @interface EnableAutoConfiguration {
 
 	/**
 	 * Exclude specific auto-configuration classes such that they will never be applied.
+	 * <p>
+	 * 排除指定 Bean 类型的 Bean
+	 *
 	 * @return the classes to exclude
 	 */
 	Class<?>[] exclude() default {};
@@ -94,6 +98,9 @@ public @interface EnableAutoConfiguration {
 	/**
 	 * Exclude specific auto-configuration class names such that they will never be
 	 * applied.
+	 * <p>
+	 * 排除指定自定配置的类名
+	 *
 	 * @return the class names to exclude
 	 * @since 1.3.0
 	 */
