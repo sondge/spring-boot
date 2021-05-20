@@ -16,10 +16,6 @@
 
 package org.springframework.boot.web.reactive.context;
 
-import java.util.function.Supplier;
-
-import reactor.core.publisher.Mono;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.web.context.ConfigurableWebServerApplicationContext;
@@ -30,6 +26,9 @@ import org.springframework.http.server.reactive.HttpHandler;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.util.StringUtils;
+import reactor.core.publisher.Mono;
+
+import java.util.function.Supplier;
 
 /**
  * A {@link GenericReactiveWebApplicationContext} that can be used to bootstrap itself
@@ -40,9 +39,15 @@ import org.springframework.util.StringUtils;
  */
 public class ReactiveWebServerApplicationContext extends GenericReactiveWebApplicationContext
 		implements ConfigurableWebServerApplicationContext {
-
+	/**
+	 * ServerManager 对象
+	 */
 	private volatile ServerManager serverManager;
-
+	/**
+	 * 通过 {@link #setServerNamespace(String)} 注入
+	 *
+	 * 不过貌似，一直没被注入，可以暂时先无视
+	 */
 	private String serverNamespace;
 
 	/**
@@ -63,9 +68,11 @@ public class ReactiveWebServerApplicationContext extends GenericReactiveWebAppli
 	@Override
 	public final void refresh() throws BeansException, IllegalStateException {
 		try {
+			// 调用父方法
 			super.refresh();
 		}
 		catch (RuntimeException ex) {
+			// 停止 Reative WebServer
 			stopAndReleaseReactiveWebServer();
 			throw ex;
 		}
@@ -73,8 +80,10 @@ public class ReactiveWebServerApplicationContext extends GenericReactiveWebAppli
 
 	@Override
 	protected void onRefresh() {
+		// 调用父类方法
 		super.onRefresh();
 		try {
+			// 创建 WebServer
 			createWebServer();
 		}
 		catch (Throwable ex) {
@@ -83,13 +92,17 @@ public class ReactiveWebServerApplicationContext extends GenericReactiveWebAppli
 	}
 
 	private void createWebServer() {
+		// 获得 ServerManager 对象
 		ServerManager serverManager = this.serverManager;
+		// 如果 serverManager 不存在
 		if (serverManager == null) {
+			// 从工厂中获取
 			String webServerFactoryBeanName = getWebServerFactoryBeanName();
 			ReactiveWebServerFactory webServerFactory = getWebServerFactory(webServerFactoryBeanName);
 			boolean lazyInit = getBeanFactory().getBeanDefinition(webServerFactoryBeanName).isLazyInit();
 			this.serverManager = ServerManager.get(webServerFactory, lazyInit);
 		}
+		// 初始化 propertySource
 		initPropertySources();
 	}
 
@@ -126,8 +139,11 @@ public class ReactiveWebServerApplicationContext extends GenericReactiveWebAppli
 
 	@Override
 	protected void finishRefresh() {
+		// 调用父类方法
 		super.finishRefresh();
+		// 启动 WebServer
 		WebServer webServer = startReactiveWebServer();
+		// 如果 WebServer 创建成功，发布 ReactiveWebServerInitializedEvent 事件
 		if (webServer != null) {
 			publishEvent(new ReactiveWebServerInitializedEvent(webServer, this));
 		}
@@ -135,7 +151,10 @@ public class ReactiveWebServerApplicationContext extends GenericReactiveWebAppli
 
 	private WebServer startReactiveWebServer() {
 		ServerManager serverManager = this.serverManager;
+		// 获得 HttpHandler
+		// 启动 WebServer
 		ServerManager.start(serverManager, this::getHttpHandler);
+		// 获得 WebServer
 		return ServerManager.getWebServer(serverManager);
 	}
 
@@ -156,12 +175,15 @@ public class ReactiveWebServerApplicationContext extends GenericReactiveWebAppli
 					"Unable to start ReactiveWebApplicationContext due to multiple HttpHandler beans : "
 							+ StringUtils.arrayToCommaDelimitedString(beanNames));
 		}
+		// 获得 HttpHandler 类型对应的	Bean 对象
 		return getBeanFactory().getBean(beanNames[0], HttpHandler.class);
 	}
 
 	@Override
 	protected void onClose() {
+		// 调用父类方法
 		super.onClose();
+		// 关闭 WebServer
 		stopAndReleaseReactiveWebServer();
 	}
 
@@ -218,11 +240,17 @@ public class ReactiveWebServerApplicationContext extends GenericReactiveWebAppli
 	 * not to initialize the handler too early.
 	 */
 	static final class ServerManager implements HttpHandler {
-
+		/**
+		 * WebServer 对象
+		 */
 		private final WebServer server;
-
+		/**
+		 * 是否是懒加载
+		 */
 		private final boolean lazyInit;
-
+		/**
+		 * HttpHandler 对象，具体在 {@link #handle(ServerHttpRequest, ServerHttpResponse)} 方法中旅使用
+		 */
 		private volatile HttpHandler handler;
 
 		private ServerManager(ReactiveWebServerFactory factory, boolean lazyInit) {
@@ -254,8 +282,10 @@ public class ReactiveWebServerApplicationContext extends GenericReactiveWebAppli
 
 		static void start(ServerManager manager, Supplier<HttpHandler> handlerSupplier) {
 			if (manager != null && manager.server != null) {
+				// 赋值 handler
 				manager.handler = manager.lazyInit ? new LazyHttpHandler(Mono.fromSupplier(handlerSupplier))
 						: handlerSupplier.get();
+				// 启动 server
 				manager.server.start();
 			}
 		}

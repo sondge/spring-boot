@@ -16,11 +16,6 @@
 
 package org.springframework.boot.web.servlet.context;
 
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.function.Supplier;
-
 import org.springframework.beans.factory.config.BeanDefinitionCustomizer;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanNameGenerator;
@@ -38,6 +33,11 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.context.support.GenericWebApplicationContext;
+
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * {@link GenericWebApplicationContext}that accepts annotated classes as input - in
@@ -62,9 +62,13 @@ public class AnnotationConfigServletWebApplicationContext extends GenericWebAppl
 	private final AnnotatedBeanDefinitionReader reader;
 
 	private final ClassPathBeanDefinitionScanner scanner;
-
+	/**
+	 * 需要被 {@link #reader} 读取的注册类们
+	 */
 	private final Set<Class<?>> annotatedClasses = new LinkedHashSet<>();
-
+	/**
+	 * 需要被 {@link #scanner} 扫描的包
+	 */
 	private String[] basePackages;
 
 	/**
@@ -98,7 +102,9 @@ public class AnnotationConfigServletWebApplicationContext extends GenericWebAppl
 	 */
 	public AnnotationConfigServletWebApplicationContext(Class<?>... annotatedClasses) {
 		this();
+		// 注册指定的注解类们
 		register(annotatedClasses);
+		// 初始化 Spring 容器
 		refresh();
 	}
 
@@ -109,7 +115,9 @@ public class AnnotationConfigServletWebApplicationContext extends GenericWebAppl
 	 */
 	public AnnotationConfigServletWebApplicationContext(String... basePackages) {
 		this();
+		// 扫描指定包
 		scan(basePackages);
+		// 初始化 Spring 容器
 		refresh();
 	}
 
@@ -174,6 +182,9 @@ public class AnnotationConfigServletWebApplicationContext extends GenericWebAppl
 	 * @see #refresh()
 	 */
 	@Override
+	/**
+	 * 实现自 AnnotationConfigRegistry 接口
+	 */
 	public final void register(Class<?>... annotatedClasses) {
 		Assert.notEmpty(annotatedClasses, "At least one annotated class must be specified");
 		this.annotatedClasses.addAll(Arrays.asList(annotatedClasses));
@@ -187,6 +198,9 @@ public class AnnotationConfigServletWebApplicationContext extends GenericWebAppl
 	 * @see #refresh()
 	 */
 	@Override
+	/**
+	 * 扫描基础包
+	 */
 	public final void scan(String... basePackages) {
 		Assert.notEmpty(basePackages, "At least one base package must be specified");
 		this.basePackages = basePackages;
@@ -194,16 +208,21 @@ public class AnnotationConfigServletWebApplicationContext extends GenericWebAppl
 
 	@Override
 	protected void prepareRefresh() {
+		// 清空 scanner 的缓存
 		this.scanner.clearCache();
+		// 调用父类
 		super.prepareRefresh();
 	}
 
 	@Override
 	protected void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+		// 调用父类
 		super.postProcessBeanFactory(beanFactory);
+		//扫描指定的包
 		if (!ObjectUtils.isEmpty(this.basePackages)) {
 			this.scanner.scan(this.basePackages);
 		}
+		// 注册指定的注解的类们定的
 		if (!this.annotatedClasses.isEmpty()) {
 			this.reader.register(ClassUtils.toClassArray(this.annotatedClasses));
 		}

@@ -16,16 +16,14 @@
 
 package org.springframework.boot.web.embedded.tomcat;
 
-import java.util.Set;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.boot.web.servlet.ServletContextInitializer;
 
 import javax.servlet.ServletContainerInitializer;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.springframework.boot.web.servlet.ServletContextInitializer;
+import java.util.Set;
 
 /**
  * {@link ServletContainerInitializer} used to trigger {@link ServletContextInitializer
@@ -35,11 +33,17 @@ import org.springframework.boot.web.servlet.ServletContextInitializer;
  * @author Andy Wilkinson
  */
 class TomcatStarter implements ServletContainerInitializer {
-
+	/**
+	 * 日志
+	 */
 	private static final Log logger = LogFactory.getLog(TomcatStarter.class);
-
+	/**
+	 * ServletContextInitializer 数组
+	 */
 	private final ServletContextInitializer[] initializers;
-
+	/**
+	 * 启动异常
+	 */
 	private volatile Exception startUpException;
 
 	TomcatStarter(ServletContextInitializer[] initializers) {
