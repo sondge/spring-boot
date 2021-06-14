@@ -16,9 +16,6 @@
 
 package org.springframework.boot.web.context;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.server.WebServer;
 import org.springframework.context.ApplicationContext;
@@ -31,6 +28,9 @@ import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.MutablePropertySources;
 import org.springframework.core.env.PropertySource;
 import org.springframework.util.StringUtils;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * {@link ApplicationContextInitializer} that sets {@link Environment} properties for the
@@ -45,6 +45,9 @@ import org.springframework.util.StringUtils;
  * <p>
  * Properties are automatically propagated up to any parent context.
  *
+ * 实现 ApplicationContextInitializer、ApplicationListener 监听 EmbeddedServletContainerInitializedEvent 类型的事件，
+ * 然后将内嵌的 Web 服务器使用的端口给设置到 ApplicationContext 中
+ *
  * @author Dave Syer
  * @author Phillip Webb
  * @since 2.0.0
@@ -54,12 +57,15 @@ public class ServerPortInfoApplicationContextInitializer implements
 
 	@Override
 	public void initialize(ConfigurableApplicationContext applicationContext) {
+		// 将自身作为一个监听器，添加到 Spring  容器中
 		applicationContext.addApplicationListener(this);
 	}
 
 	@Override
 	public void onApplicationEvent(WebServerInitializedEvent event) {
+		// 获取属性名
 		String propertyName = "local." + getName(event.getApplicationContext()) + ".port";
+		// 设置端口到 enviroment 的 propertyName 中
 		setPortProperty(event.getApplicationContext(), propertyName, event.getWebServer().getPort());
 	}
 
@@ -69,9 +75,11 @@ public class ServerPortInfoApplicationContextInitializer implements
 	}
 
 	private void setPortProperty(ApplicationContext context, String propertyName, int port) {
+		// 设置端口到 enviroment 的 propertyName 中
 		if (context instanceof ConfigurableApplicationContext) {
 			setPortProperty(((ConfigurableApplicationContext) context).getEnvironment(), propertyName, port);
 		}
+		// 如果有父容器，则继续设置
 		if (context.getParent() != null) {
 			setPortProperty(context.getParent(), propertyName, port);
 		}
@@ -80,11 +88,13 @@ public class ServerPortInfoApplicationContextInitializer implements
 	@SuppressWarnings("unchecked")
 	private void setPortProperty(ConfigurableEnvironment environment, String propertyName, int port) {
 		MutablePropertySources sources = environment.getPropertySources();
+		// 获得 server.ports 属性对应的值
 		PropertySource<?> source = sources.get("server.ports");
 		if (source == null) {
 			source = new MapPropertySource("server.ports", new HashMap<>());
 			sources.addFirst(source);
 		}
+		// 添加到 source 中
 		((Map<String, Object>) source.getSource()).put(propertyName, port);
 	}
 

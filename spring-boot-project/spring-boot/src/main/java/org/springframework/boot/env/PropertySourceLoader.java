@@ -35,17 +35,24 @@ public interface PropertySourceLoader {
 
 	/**
 	 * Returns the file extensions that the loader supports (excluding the '.').
+	 * <p>
+	 * 获得可以处理的配置文件的后缀
+	 *
 	 * @return the file extensions
 	 */
 	String[] getFileExtensions();
 
 	/**
+	 * 加载指定配置文件，返回 PropertySource 数组
+	 * <p>
 	 * Load the resource into one or more property sources. Implementations may either
 	 * return a list containing a single source, or in the case of a multi-document format
 	 * such as yaml a source for each document in the resource.
-	 * @param name the root name of the property source. If multiple documents are loaded
-	 * an additional suffix should be added to the name for each source loaded.
-	 * @param resource the resource to load
+	 *
+	 * @param name     the root name of the property source. If multiple documents are loaded
+	 *                 an additional suffix should be added to the name for each source loaded.
+	 *                 PropertySource 的名字
+	 * @param resource the resource to load 配置文件的 Resource 对象
 	 * @return a list property sources
 	 * @throws IOException if the source cannot be loaded
 	 */

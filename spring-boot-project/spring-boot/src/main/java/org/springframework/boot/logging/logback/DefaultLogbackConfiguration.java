@@ -61,7 +61,9 @@ class DefaultLogbackConfiguration {
 	private static final DataSize MAX_FILE_SIZE = DataSize.ofMegabytes(10);
 
 	private static final Integer MAX_FILE_HISTORY = 7;
-
+	/**
+	 * PropertyResolver 对象。提供从 environment 解析配置
+	 */
 	private final PropertyResolver patterns;
 
 	private final LogFile logFile;
@@ -72,27 +74,36 @@ class DefaultLogbackConfiguration {
 	}
 
 	private PropertyResolver getPatternsResolver(Environment environment) {
+		// 创建 PropertySourcePropertyResolver 对象，无 environment
 		if (environment == null) {
 			return new PropertySourcesPropertyResolver(null);
 		}
+		// 创建 PropertySourcesPropertyResolver 对象，有 environment
 		if (environment instanceof ConfigurableEnvironment) {
 			PropertySourcesPropertyResolver resolver = new PropertySourcesPropertyResolver(
 					((ConfigurableEnvironment) environment).getPropertySources());
 			resolver.setIgnoreUnresolvableNestedPlaceholders(true);
 			return resolver;
 		}
+		// 直接返回 environment
 		return environment;
 	}
 
 	void apply(LogbackConfigurator config) {
+		// 锁
 		synchronized (config.getConfigurationLock()) {
+			// 设置基础属性
 			base(config);
+			// 创建 console Appender
 			Appender<ILoggingEvent> consoleAppender = consoleAppender(config);
+			// 如果 logFile 非空，则创建 file Appender
 			if (this.logFile != null) {
 				Appender<ILoggingEvent> fileAppender = fileAppender(config, this.logFile.toString());
+				// 设置 Appender 到 ROOT Logger
 				config.root(Level.INFO, consoleAppender, fileAppender);
 			}
 			else {
+				// 设置 appender 到 ROOT Logger
 				config.root(Level.INFO, consoleAppender);
 			}
 		}
@@ -131,6 +142,7 @@ class DefaultLogbackConfiguration {
 		appender.setEncoder(encoder);
 		config.start(encoder);
 		appender.setFile(logFile);
+		// 滚动策略
 		setRollingPolicy(appender, config, logFile);
 		config.appender("FILE", appender);
 		return appender;
@@ -144,6 +156,7 @@ class DefaultLogbackConfiguration {
 				this.patterns.getProperty("logging.file.clean-history-on-start", Boolean.class, false));
 		rollingPolicy.setFileNamePattern(
 				this.patterns.getProperty("logging.pattern.rolling-file-name", logFile + ".%d{yyyy-MM-dd}.%i.gz"));
+		// 设置单文件的最大值
 		setMaxFileSize(rollingPolicy, getDataSize("logging.file.max-size", MAX_FILE_SIZE));
 		rollingPolicy
 				.setMaxHistory(this.patterns.getProperty("logging.file.max-history", Integer.class, MAX_FILE_HISTORY));

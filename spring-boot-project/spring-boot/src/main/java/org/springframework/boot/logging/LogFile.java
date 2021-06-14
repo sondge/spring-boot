@@ -16,13 +16,13 @@
 
 package org.springframework.boot.logging;
 
-import java.io.File;
-import java.util.Properties;
-
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.PropertyResolver;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
+
+import java.io.File;
+import java.util.Properties;
 
 /**
  * A reference to a log output file. Log output files are specified using
@@ -128,8 +128,10 @@ public class LogFile {
 	 * suitable properties
 	 */
 	public static LogFile get(PropertyResolver propertyResolver) {
+		// 获得 file 和 path 属性
 		String file = getLogFileProperty(propertyResolver, FILE_NAME_PROPERTY, FILE_PROPERTY);
 		String path = getLogFileProperty(propertyResolver, FILE_PATH_PROPERTY, PATH_PROPERTY);
+		// 创建 LogFile 对象
 		if (StringUtils.hasLength(file) || StringUtils.hasLength(path)) {
 			return new LogFile(file, path);
 		}

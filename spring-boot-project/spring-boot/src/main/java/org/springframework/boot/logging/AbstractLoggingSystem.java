@@ -16,6 +16,12 @@
 
 package org.springframework.boot.logging;
 
+import org.springframework.core.env.Environment;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.util.ClassUtils;
+import org.springframework.util.StringUtils;
+import org.springframework.util.SystemPropertyUtils;
+
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -23,14 +29,10 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.springframework.core.env.Environment;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.util.ClassUtils;
-import org.springframework.util.StringUtils;
-import org.springframework.util.SystemPropertyUtils;
-
 /**
  * Abstract base class for {@link LoggingSystem} implementations.
+ *
+ * LoggingSystem 的抽象基类实现
  *
  * @author Phillip Webb
  * @author Dave Syer
@@ -53,10 +55,12 @@ public abstract class AbstractLoggingSystem extends LoggingSystem {
 
 	@Override
 	public void initialize(LoggingInitializationContext initializationContext, String configLocation, LogFile logFile) {
+		// 有自定义的配置文件，则使用指定文件进行初始化
 		if (StringUtils.hasLength(configLocation)) {
 			initializeWithSpecificConfig(initializationContext, configLocation, logFile);
 			return;
 		}
+		// 无定义的配置文件，则使用约定配置文件进行初始化
 		initializeWithConventions(initializationContext, logFile);
 	}
 

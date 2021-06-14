@@ -33,6 +33,9 @@ import org.springframework.core.env.SystemEnvironmentPropertySource;
  * {@link SystemEnvironmentPropertySource} with an
  * {@link OriginAwareSystemEnvironmentPropertySource} that can track the
  * {@link SystemEnvironmentOrigin} for every system environment property.
+ * <p>
+ * 实现将 environment 中的 systemEnvironment 对应的 PropertySource 属性源对象，替换 OriginAwareSystemEnvironmentPropertySource
+ * 对象
  *
  * @author Madhura Bhave
  * @since 2.0.0
@@ -41,15 +44,21 @@ public class SystemEnvironmentPropertySourceEnvironmentPostProcessor implements 
 
 	/**
 	 * The default order for the processor.
+	 *
+	 * 这个默认的顺序对于这个 processor
 	 */
 	public static final int DEFAULT_ORDER = SpringApplicationJsonEnvironmentPostProcessor.DEFAULT_ORDER - 1;
-
+	/**
+	 * 顺序
+	 */
 	private int order = DEFAULT_ORDER;
 
 	@Override
 	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+		// 获得 systemEnvironment 对应的 PropertySource 属性源
 		String sourceName = StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME;
 		PropertySource<?> propertySource = environment.getPropertySources().get(sourceName);
+		// 将原始的 PropertySource 对象，替换成 OriginAwareSystemEnvironmentPropertySource 对象
 		if (propertySource != null) {
 			replacePropertySource(environment, sourceName, propertySource);
 		}
@@ -57,10 +66,12 @@ public class SystemEnvironmentPropertySourceEnvironmentPostProcessor implements 
 
 	@SuppressWarnings("unchecked")
 	private void replacePropertySource(ConfigurableEnvironment environment, String sourceName,
-			PropertySource<?> propertySource) {
+									   PropertySource<?> propertySource) {
 		Map<String, Object> originalSource = (Map<String, Object>) propertySource.getSource();
+		// 创建 SystemEnvironmentPropertySource
 		SystemEnvironmentPropertySource source = new OriginAwareSystemEnvironmentPropertySource(sourceName,
 				originalSource);
+		// 替换 OriginAwareSystemEnvironmentPropertySource
 		environment.getPropertySources().replace(sourceName, source);
 	}
 
@@ -85,10 +96,13 @@ public class SystemEnvironmentPropertySourceEnvironmentPostProcessor implements 
 
 		@Override
 		public Origin getOrigin(String key) {
+			// 解析 key 对应的 property
 			String property = resolvePropertyName(key);
+			// 判断是否存在 property 对应的值，如果存在，则返回 SystemEnvironmentOrigin 对象
 			if (super.containsProperty(property)) {
 				return new SystemEnvironmentOrigin(property);
 			}
+			// 不存在，返回为 null
 			return null;
 		}
 

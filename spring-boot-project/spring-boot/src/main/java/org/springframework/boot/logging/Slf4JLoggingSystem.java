@@ -16,15 +16,14 @@
 
 package org.springframework.boot.logging;
 
+import org.slf4j.bridge.SLF4JBridgeHandler;
+import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
+
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-
-import org.slf4j.bridge.SLF4JBridgeHandler;
-
-import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
 
 /**
  * Abstract base class for {@link LoggingSystem} implementations that utilize SLF4J.
@@ -42,13 +41,17 @@ public abstract class Slf4JLoggingSystem extends AbstractLoggingSystem {
 
 	@Override
 	public void beforeInitialize() {
+		// 父方法
 		super.beforeInitialize();
+		// 配置 JUL 的桥接处理器
 		configureJdkLoggingBridgeHandler();
 	}
 
 	@Override
 	public void cleanUp() {
+		// 判断 JUL 是否桥接到 SLF4J 了
 		if (isBridgeHandlerAvailable()) {
+			// 移除 JUL 桥接处理器
 			removeJdkLoggingBridgeHandler();
 		}
 	}
@@ -64,8 +67,11 @@ public abstract class Slf4JLoggingSystem extends AbstractLoggingSystem {
 
 	private void configureJdkLoggingBridgeHandler() {
 		try {
+			// 判断 JUL 是否桥接到 SLF4j 了
 			if (isBridgeJulIntoSlf4j()) {
+				// 移除 JUL 桥接处理器
 				removeJdkLoggingBridgeHandler();
+				// 重新安装 SLF4JBridgeHandler
 				SLF4JBridgeHandler.install();
 			}
 		}
@@ -80,6 +86,8 @@ public abstract class Slf4JLoggingSystem extends AbstractLoggingSystem {
 	 * @since 2.0.4
 	 */
 	protected final boolean isBridgeJulIntoSlf4j() {
+		// 1. 判断是否存在 SLF4JBridgeHandler
+		// 2. 判断是否 JUL 只创建了 ConsoleHandler 处理器
 		return isBridgeHandlerAvailable() && isJulUsingASingleConsoleHandlerAtMost();
 	}
 
@@ -95,7 +103,9 @@ public abstract class Slf4JLoggingSystem extends AbstractLoggingSystem {
 
 	private void removeJdkLoggingBridgeHandler() {
 		try {
+			// 移除 JUL 的 ConsoleHandler
 			removeDefaultRootHandler();
+			// 卸载 SLF4JBridgeHanlder
 			SLF4JBridgeHandler.uninstall();
 		}
 		catch (Throwable ex) {

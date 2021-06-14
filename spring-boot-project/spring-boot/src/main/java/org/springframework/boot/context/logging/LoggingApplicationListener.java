@@ -16,16 +16,8 @@
 
 package org.springframework.boot.context.logging;
 
-import java.io.FileNotFoundException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.context.event.ApplicationEnvironmentPreparedEvent;
@@ -55,6 +47,13 @@ import org.springframework.core.log.LogMessage;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
+
+import java.io.FileNotFoundException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 
 /**
  * An {@link ApplicationListener} that configures the {@link LoggingSystem}. If the
@@ -90,25 +89,37 @@ import org.springframework.util.StringUtils;
  * @see LoggingSystem#get(ClassLoader)
  */
 public class LoggingApplicationListener implements GenericApplicationListener {
-
+	/**
+	 * 日志级别
+	 */
 	private static final ConfigurationPropertyName LOGGING_LEVEL = ConfigurationPropertyName.of("logging.level");
-
+	/**
+	 * 日志组
+	 */
 	private static final ConfigurationPropertyName LOGGING_GROUP = ConfigurationPropertyName.of("logging.group");
-
+	/**
+	 * String 日志级别 Map
+	 */
 	private static final Bindable<Map<String, LogLevel>> STRING_LOGLEVEL_MAP = Bindable.mapOf(String.class,
 			LogLevel.class);
-
+	/**
+	 * String 类型的 Map
+	 */
 	private static final Bindable<Map<String, List<String>>> STRING_STRINGS_MAP = Bindable
 			.of(ResolvableType.forClassWithGenerics(MultiValueMap.class, String.class, String.class).asMap());
 
 	/**
 	 * The default order for the LoggingApplicationListener.
+	 *
+	 * 默认的排序
 	 */
 	public static final int DEFAULT_ORDER = Ordered.HIGHEST_PRECEDENCE + 20;
 
 	/**
 	 * The name of the Spring property that contains a reference to the logging
 	 * configuration to load.
+	 *
+	 * Spring 属性名称，包含日志配置引用
 	 */
 	public static final String CONFIG_PROPERTY = "logging.config";
 
@@ -121,17 +132,23 @@ public class LoggingApplicationListener implements GenericApplicationListener {
 
 	/**
 	 * The name of the {@link LoggingSystem} bean.
+	 *
+	 * 日志系统 Bean 名称
 	 */
 	public static final String LOGGING_SYSTEM_BEAN_NAME = "springBootLoggingSystem";
 
 	/**
 	 * The name of the {@link LogFile} bean.
+	 *
+	 * LogFile Bean 名称
 	 * @since 2.2.0
 	 */
 	public static final String LOG_FILE_BEAN_NAME = "springBootLogFile";
 
 	/**
 	 * The name of the{@link LoggerGroups} bean.
+	 *
+	 * LoggerGroups 的 Bean 名称
 	 * @since 2.2.0
 	 */
 	public static final String LOGGER_GROUPS_BEAN_NAME = "springBootLoggerGroups";
@@ -171,6 +188,9 @@ public class LoggingApplicationListener implements GenericApplicationListener {
 		SPRING_BOOT_LOGGING_LOGGERS = Collections.unmodifiableMap(loggers);
 	}
 
+	/**
+	 * 事件类型
+	 */
 	private static final Class<?>[] EVENT_TYPES = { ApplicationStartingEvent.class,
 			ApplicationEnvironmentPreparedEvent.class, ApplicationPreparedEvent.class, ContextClosedEvent.class,
 			ApplicationFailedEvent.class };
@@ -216,38 +236,49 @@ public class LoggingApplicationListener implements GenericApplicationListener {
 
 	@Override
 	public void onApplicationEvent(ApplicationEvent event) {
+		// 在 Spring Boot 应用启动的时候
 		if (event instanceof ApplicationStartingEvent) {
 			onApplicationStartingEvent((ApplicationStartingEvent) event);
 		}
+		// 在 Spring Boot 的 Environment 环境准备完成的时候
 		else if (event instanceof ApplicationEnvironmentPreparedEvent) {
 			onApplicationEnvironmentPreparedEvent((ApplicationEnvironmentPreparedEvent) event);
 		}
+		// 在 Spring Boot 容器的准备工作已经完成（并未启动）的时候
 		else if (event instanceof ApplicationPreparedEvent) {
 			onApplicationPreparedEvent((ApplicationPreparedEvent) event);
 		}
+		// 在 Spring Boot 容器关闭的时候
 		else if (event instanceof ContextClosedEvent
 				&& ((ContextClosedEvent) event).getApplicationContext().getParent() == null) {
 			onContextClosedEvent();
 		}
+		// 在 Spring Boot 容器启动失败的时候
 		else if (event instanceof ApplicationFailedEvent) {
 			onApplicationFailedEvent();
 		}
 	}
 
 	private void onApplicationStartingEvent(ApplicationStartingEvent event) {
+		// 创建 loggingSystem 对象
 		this.loggingSystem = LoggingSystem.get(event.getSpringApplication().getClassLoader());
+		// LoggingSystem 的初始化的前置处理
 		this.loggingSystem.beforeInitialize();
 	}
 
 	private void onApplicationEnvironmentPreparedEvent(ApplicationEnvironmentPreparedEvent event) {
+		// 初始化 loggingSystem
 		if (this.loggingSystem == null) {
 			this.loggingSystem = LoggingSystem.get(event.getSpringApplication().getClassLoader());
 		}
+		// 初始化
 		initialize(event.getEnvironment(), event.getSpringApplication().getClassLoader());
 	}
 
 	private void onApplicationPreparedEvent(ApplicationPreparedEvent event) {
+		// 获取 BeanFactory
 		ConfigurableListableBeanFactory beanFactory = event.getApplicationContext().getBeanFactory();
+		// 注册各种 Bean
 		if (!beanFactory.containsBean(LOGGING_SYSTEM_BEAN_NAME)) {
 			beanFactory.registerSingleton(LOGGING_SYSTEM_BEAN_NAME, this.loggingSystem);
 		}
@@ -278,15 +309,22 @@ public class LoggingApplicationListener implements GenericApplicationListener {
 	 * @param classLoader the classloader
 	 */
 	protected void initialize(ConfigurableEnvironment environment, ClassLoader classLoader) {
+		// 初始化 LoggingSystemProperties 配置
 		new LoggingSystemProperties(environment).apply();
+		// 初始化 logFile
 		this.logFile = LogFile.get(environment);
 		if (this.logFile != null) {
 			this.logFile.applyToSystemProperties();
 		}
+		// 初始化 LoggerGroups 的配置
 		this.loggerGroups = new LoggerGroups(DEFAULT_GROUP_LOGGERS);
+		// 初始化早期的 Spring Boot Logging 级别
 		initializeEarlyLoggingLevel(environment);
+		// 初始化 LoggingSystem 日志系统
 		initializeSystem(environment, this.loggingSystem, this.logFile);
+		// 初始化最终的 Spring Boot Logging 级别
 		initializeFinalLoggingLevels(environment, this.loggingSystem);
+		// 注册关闭，如果有必要的
 		registerShutdownHookIfNecessary(environment, this.loggingSystem);
 	}
 
@@ -307,11 +345,15 @@ public class LoggingApplicationListener implements GenericApplicationListener {
 	}
 
 	private void initializeSystem(ConfigurableEnvironment environment, LoggingSystem system, LogFile logFile) {
+		// 创建 LoggingInitializationContext 对象
 		LoggingInitializationContext initializationContext = new LoggingInitializationContext(environment);
+		// 获得日志组件的配置文件
 		String logConfig = environment.getProperty(CONFIG_PROPERTY);
+		// 如果没有配置，则直接初始化 LoggingSystem
 		if (ignoreLogConfig(logConfig)) {
 			system.initialize(initializationContext, null, logFile);
 		}
+		// 如果有配置，先尝试加载指定配置文件，然后初始化 LoggingSystem
 		else {
 			try {
 				system.initialize(initializationContext, logConfig, logFile);
@@ -335,16 +377,22 @@ public class LoggingApplicationListener implements GenericApplicationListener {
 	}
 
 	private void initializeFinalLoggingLevels(ConfigurableEnvironment environment, LoggingSystem system) {
+		// 绑定 LoggerGroup 组
 		bindLoggerGroups(environment);
+		// 如果 springBootLogging 不为空，则初始化日志级别
 		if (this.springBootLogging != null) {
 			initializeLogLevel(system, this.springBootLogging);
 		}
+		// 设置日志级别
 		setLogLevels(system, environment);
 	}
 
 	private void bindLoggerGroups(ConfigurableEnvironment environment) {
+		// 日志组
 		if (this.loggerGroups != null) {
+			// 获取环境中的 Binder
 			Binder binder = Binder.get(environment);
+			// 绑定日志级别
 			binder.bind(LOGGING_GROUP, STRING_STRINGS_MAP).ifBound(this.loggerGroups::putAll);
 		}
 	}
@@ -371,7 +419,9 @@ public class LoggingApplicationListener implements GenericApplicationListener {
 	 * @since 2.2.0
 	 */
 	protected void initializeSpringBootLogging(LoggingSystem system, LogLevel springBootLogging) {
+		// 绑定 BiConsumer 的配置
 		BiConsumer<String, LogLevel> configurer = getLogLevelConfigurer(system);
+		// 获取日志
 		SPRING_BOOT_LOGGING_LOGGERS.getOrDefault(springBootLogging, Collections.emptyList())
 				.forEach((name) -> configureLogLevel(name, springBootLogging, configurer));
 	}
@@ -397,9 +447,13 @@ public class LoggingApplicationListener implements GenericApplicationListener {
 	 * @since 2.2.0
 	 */
 	protected void setLogLevels(LoggingSystem system, ConfigurableEnvironment environment) {
+		// 获取日志配置
 		BiConsumer<String, LogLevel> customizer = getLogLevelConfigurer(system);
+		// 获取绑定环境
 		Binder binder = Binder.get(environment);
+		// 获取日志级别
 		Map<String, LogLevel> levels = binder.bind(LOGGING_LEVEL, STRING_LOGLEVEL_MAP).orElseGet(Collections::emptyMap);
+		// 配置日志级别
 		levels.forEach((name, level) -> configureLogLevel(name, level, customizer));
 	}
 
@@ -427,9 +481,13 @@ public class LoggingApplicationListener implements GenericApplicationListener {
 	}
 
 	private void registerShutdownHookIfNecessary(Environment environment, LoggingSystem loggingSystem) {
+		// 获得 loggin.register-shutdown-hook 对应的配置值
 		boolean registerShutdownHook = environment.getProperty(REGISTER_SHUTDOWN_HOOK_PROPERTY, Boolean.class, false);
+		// 如果开启
 		if (registerShutdownHook) {
+			// 获得 shutdownHandler 钩子
 			Runnable shutdownHandler = loggingSystem.getShutdownHandler();
+			// 注册 ShutdownHook
 			if (shutdownHandler != null && shutdownHookRegistered.compareAndSet(false, true)) {
 				registerShutdownHook(new Thread(shutdownHandler));
 			}

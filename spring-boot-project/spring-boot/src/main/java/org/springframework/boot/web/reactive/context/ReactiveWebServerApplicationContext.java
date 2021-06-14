@@ -183,7 +183,7 @@ public class ReactiveWebServerApplicationContext extends GenericReactiveWebAppli
 	protected void onClose() {
 		// 调用父类方法
 		super.onClose();
-		// 关闭 WebServer
+
 		stopAndReleaseReactiveWebServer();
 	}
 

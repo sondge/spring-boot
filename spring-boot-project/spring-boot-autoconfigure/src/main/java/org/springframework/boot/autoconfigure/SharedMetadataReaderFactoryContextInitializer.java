@@ -47,16 +47,24 @@ import org.springframework.core.type.classreading.MetadataReaderFactory;
  */
 class SharedMetadataReaderFactoryContextInitializer
 		implements ApplicationContextInitializer<ConfigurableApplicationContext>, Ordered {
-
+	/**
+	 * 创建的 CachingMetadataReaderFactory 的 Bean 名称
+	 */
 	public static final String BEAN_NAME = "org.springframework.boot.autoconfigure."
 			+ "internalCachingMetadataReaderFactory";
 
 	@Override
+	/**
+	 * 将 CachingMetadataReaderFactoryPostProcessor 加入 BeanFactoryPostProcessor
+	 */
 	public void initialize(ConfigurableApplicationContext applicationContext) {
 		applicationContext.addBeanFactoryPostProcessor(new CachingMetadataReaderFactoryPostProcessor());
 	}
 
 	@Override
+	/**
+	 * 获取优先级
+	 */
 	public int getOrder() {
 		return 0;
 	}
@@ -70,6 +78,9 @@ class SharedMetadataReaderFactoryContextInitializer
 			implements BeanDefinitionRegistryPostProcessor, PriorityOrdered {
 
 		@Override
+		/**
+		 * 获取优先级
+		 */
 		public int getOrder() {
 			// Must happen before the ConfigurationClassPostProcessor is created
 			return Ordered.HIGHEST_PRECEDENCE;
@@ -85,6 +96,10 @@ class SharedMetadataReaderFactoryContextInitializer
 			configureConfigurationClassPostProcessor(registry);
 		}
 
+		/**
+		 * 注册 SharedMetadataReaderFactoryBean
+		 * @param registry
+		 */
 		private void register(BeanDefinitionRegistry registry) {
 			BeanDefinition definition = BeanDefinitionBuilder
 					.genericBeanDefinition(SharedMetadataReaderFactoryBean.class, SharedMetadataReaderFactoryBean::new)

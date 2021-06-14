@@ -44,36 +44,43 @@ import org.springframework.util.StringUtils;
 public class DelegatingApplicationListener implements ApplicationListener<ApplicationEvent>, Ordered {
 
 	// NOTE: Similar to org.springframework.web.context.ContextLoader
-
+	// 相似的 org.springframework.web.context.ContextLoader
 	private static final String PROPERTY_NAME = "context.listener.classes";
-
+	// 获取顺序
 	private int order = 0;
-
+	// 简单的应用监听器广播器
 	private SimpleApplicationEventMulticaster multicaster;
 
 	@Override
 	public void onApplicationEvent(ApplicationEvent event) {
+		// 如果 ApplicationEnvironmentPreparedEvent 实践
 		if (event instanceof ApplicationEnvironmentPreparedEvent) {
+			// 获取环境
 			List<ApplicationListener<ApplicationEvent>> delegates = getListeners(
 					((ApplicationEnvironmentPreparedEvent) event).getEnvironment());
+			// 如果为空，直接返回
 			if (delegates.isEmpty()) {
 				return;
 			}
+			// 加入管理器
 			this.multicaster = new SimpleApplicationEventMulticaster();
 			for (ApplicationListener<ApplicationEvent> listener : delegates) {
 				this.multicaster.addApplicationListener(listener);
 			}
 		}
 		if (this.multicaster != null) {
+			// 广播事件
 			this.multicaster.multicastEvent(event);
 		}
 	}
 
 	@SuppressWarnings("unchecked")
 	private List<ApplicationListener<ApplicationEvent>> getListeners(ConfigurableEnvironment environment) {
+		// 如果环境为空，返回空列表
 		if (environment == null) {
 			return Collections.emptyList();
 		}
+		// 获取类名
 		String classNames = environment.getProperty(PROPERTY_NAME);
 		List<ApplicationListener<ApplicationEvent>> listeners = new ArrayList<>();
 		if (StringUtils.hasLength(classNames)) {

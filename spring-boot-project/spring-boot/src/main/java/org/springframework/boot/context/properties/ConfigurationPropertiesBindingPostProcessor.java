@@ -46,21 +46,28 @@ public class ConfigurationPropertiesBindingPostProcessor
 
 	/**
 	 * The bean name that this post-processor is registered with.
+	 * Bean 名称
 	 */
 	public static final String BEAN_NAME = ConfigurationPropertiesBindingPostProcessor.class.getName();
 
 	/**
 	 * The bean name of the configuration properties validator.
+	 *
+	 * Bean 名称配置属性校验器
 	 * @deprecated since 2.2.0 in favor of
 	 * {@link EnableConfigurationProperties#VALIDATOR_BEAN_NAME}
 	 */
 	@Deprecated
 	public static final String VALIDATOR_BEAN_NAME = EnableConfigurationProperties.VALIDATOR_BEAN_NAME;
-
+	/**
+	 * 应用上下文
+	 */
 	private ApplicationContext applicationContext;
 
 	private BeanDefinitionRegistry registry;
-
+	/**
+	 * 配置属性绑定器
+	 */
 	private ConfigurationPropertiesBinder binder;
 
 	/**
@@ -98,6 +105,7 @@ public class ConfigurationPropertiesBindingPostProcessor
 	}
 
 	private void bind(ConfigurationPropertiesBean bean) {
+		// 判断是否绑定
 		if (bean == null || hasBoundValueObject(bean.getName())) {
 			return;
 		}

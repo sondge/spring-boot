@@ -22,11 +22,15 @@ import org.springframework.core.env.Environment;
 /**
  * Context passed to the {@link LoggingSystem} during initialization.
  *
+ * 上下文初始化期间通过 {@link LoggingSystem}
+ *
  * @author Phillip Webb
  * @since 1.3.0
  */
 public class LoggingInitializationContext {
-
+	/**
+	 * 配置环境
+	 */
 	private final ConfigurableEnvironment environment;
 
 	/**

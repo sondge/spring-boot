@@ -16,13 +16,6 @@
 
 package org.springframework.boot.autoconfigure;
 
-import java.nio.charset.StandardCharsets;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.validation.Configuration;
-import javax.validation.Validation;
-
 import org.springframework.boot.context.event.ApplicationEnvironmentPreparedEvent;
 import org.springframework.boot.context.event.ApplicationFailedEvent;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -33,6 +26,12 @@ import org.springframework.core.annotation.Order;
 import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.http.converter.support.AllEncompassingFormHttpMessageConverter;
+
+import javax.validation.Configuration;
+import javax.validation.Validation;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * {@link ApplicationListener} to trigger early initialization in a background thread of
@@ -55,63 +54,81 @@ public class BackgroundPreinitializer implements ApplicationListener<SpringAppli
 	 * property is set to {@code true}, no pre-initialization happens and each item is
 	 * initialized in the foreground as it needs to. When the property is {@code false}
 	 * (default), pre initialization runs in a separate thread in the background.
+	 *
+	 * 系统属性指示 Spring Boot 如何在初始化之前运行
 	 * @since 2.1.0
 	 */
 	public static final String IGNORE_BACKGROUNDPREINITIALIZER_PROPERTY_NAME = "spring.backgroundpreinitializer.ignore";
-
+	/**
+	 * 预初始化任务是否已启动
+	 */
 	private static final AtomicBoolean preinitializationStarted = new AtomicBoolean(false);
-
+	/**
+	 * 预初始化任务的 CountDownLatch  对象，用于实现等待预初始化任务是否完成
+	 */
 	private static final CountDownLatch preinitializationComplete = new CountDownLatch(1);
 
 	@Override
 	public void onApplicationEvent(SpringApplicationEvent event) {
+		// 如果是开启后台预初始化任务，默认情况下开启
+		// 并且，是 ApplicationStartingEvent 事件，说明应用正在启动中
+		// 并且，是多核处理器
+		// 并且，预初始化任务未启动
 		if (!Boolean.getBoolean(IGNORE_BACKGROUNDPREINITIALIZER_PROPERTY_NAME)
 				&& event instanceof ApplicationEnvironmentPreparedEvent && multipleProcessors()
 				&& preinitializationStarted.compareAndSet(false, true)) {
+			// 启动
 			performPreinitialization();
 		}
+		// 如果是 ApplicationReadyEvent 或 ApplicationFailedEvent 事件，说明应用启动成功后失败，则等待初始化任务完成
 		if ((event instanceof ApplicationReadyEvent || event instanceof ApplicationFailedEvent)
-				&& preinitializationStarted.get()) {
+				&& preinitializationStarted.get()) { // 判断预初始化任务已经启动
+			// 通过 CountDownLatch 实现， 预初始化任务执行完成
 			try {
 				preinitializationComplete.await();
-			}
-			catch (InterruptedException ex) {
+			} catch (InterruptedException ex) {
 				Thread.currentThread().interrupt();
 			}
 		}
 	}
 
+	/**
+	 *
+	 * @return 判断是否多核环境
+	 */
 	private boolean multipleProcessors() {
 		return Runtime.getRuntime().availableProcessors() > 1;
 	}
 
 	private void performPreinitialization() {
 		try {
+			// 创建线程
 			Thread thread = new Thread(new Runnable() {
 
 				@Override
 				public void run() {
+					// 安全运行每个初始化任务
 					runSafely(new ConversionServiceInitializer());
 					runSafely(new ValidationInitializer());
 					runSafely(new MessageConverterInitializer());
 					runSafely(new JacksonInitializer());
 					runSafely(new CharsetInitializer());
+					// 标记 preinitializationComplete 完成
 					preinitializationComplete.countDown();
 				}
 
 				public void runSafely(Runnable runnable) {
 					try {
 						runnable.run();
-					}
-					catch (Throwable ex) {
+					} catch (Throwable ex) {
 						// Ignore
 					}
 				}
 
 			}, "background-preinit");
+			// 启动线程
 			thread.start();
-		}
-		catch (Exception ex) {
+		} catch (Exception ex) {
 			// This will fail on GAE where creating threads is prohibited. We can safely
 			// continue but startup will be slightly slower as the initialization will now
 			// happen on the main thread.
@@ -121,6 +138,8 @@ public class BackgroundPreinitializer implements ApplicationListener<SpringAppli
 
 	/**
 	 * Early initializer for Spring MessageConverters.
+	 *
+	 *  提前初始化对于 Spring 消息转换器
 	 */
 	private static class MessageConverterInitializer implements Runnable {
 
@@ -133,11 +152,14 @@ public class BackgroundPreinitializer implements ApplicationListener<SpringAppli
 
 	/**
 	 * Early initializer for javax.validation.
+	 *
+	 * 提前初始化对于 校验
 	 */
 	private static class ValidationInitializer implements Runnable {
 
 		@Override
 		public void run() {
+			// 校验配置
 			Configuration<?> configuration = Validation.byDefaultProvider().configure();
 			configuration.buildValidatorFactory().getValidator();
 		}
@@ -146,6 +168,8 @@ public class BackgroundPreinitializer implements ApplicationListener<SpringAppli
 
 	/**
 	 * Early initializer for Jackson.
+	 *
+	 * JSON 提前初始化
 	 */
 	private static class JacksonInitializer implements Runnable {
 
@@ -158,6 +182,8 @@ public class BackgroundPreinitializer implements ApplicationListener<SpringAppli
 
 	/**
 	 * Early initializer for Spring's ConversionService.
+	 *
+	 * Spring 类型转换器的初始化
 	 */
 	private static class ConversionServiceInitializer implements Runnable {
 
@@ -168,6 +194,9 @@ public class BackgroundPreinitializer implements ApplicationListener<SpringAppli
 
 	}
 
+	/**
+	 * 字符集初始化
+	 */
 	private static class CharsetInitializer implements Runnable {
 
 		@Override

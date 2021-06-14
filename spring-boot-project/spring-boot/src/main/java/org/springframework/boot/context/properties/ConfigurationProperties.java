@@ -16,13 +16,13 @@
 
 package org.springframework.boot.context.properties;
 
+import org.springframework.core.annotation.AliasFor;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-import org.springframework.core.annotation.AliasFor;
 
 /**
  * Annotation for externalized configuration. Add this to a class definition or a
@@ -35,6 +35,8 @@ import org.springframework.core.annotation.AliasFor;
  * <p>
  * Note that contrary to {@code @Value}, SpEL expressions are not evaluated since property
  * values are externalized.
+ *
+ * 将配置文件自动设置到被注解的类
  *
  * @author Dave Syer
  * @since 1.0.0

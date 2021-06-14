@@ -16,6 +16,9 @@
 
 package org.springframework.boot.logging;
 
+import org.springframework.util.ClassUtils;
+import org.springframework.util.StringUtils;
+
 import java.lang.reflect.Constructor;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -23,9 +26,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.springframework.util.ClassUtils;
-import org.springframework.util.StringUtils;
 
 /**
  * Common abstraction over logging systems.
@@ -40,6 +40,8 @@ public abstract class LoggingSystem {
 
 	/**
 	 * A System property that can be used to indicate the {@link LoggingSystem} to use.
+	 *
+	 * 一个系统属性可以被使用表示 {@link LoggingSystem} 使用
 	 */
 	public static final String SYSTEM_PROPERTY = LoggingSystem.class.getName();
 
@@ -71,6 +73,8 @@ public abstract class LoggingSystem {
 	 * Reset the logging system to be limit output. This method may be called before
 	 * {@link #initialize(LoggingInitializationContext, String, LogFile)} to reduce
 	 * logging noise until the system has been fully initialized.
+	 *
+	 * 初始化前置方法
 	 */
 	public abstract void beforeInitialize();
 
@@ -81,6 +85,8 @@ public abstract class LoggingSystem {
 	 * initialization is required
 	 * @param logFile the log output file that should be written or {@code null} for
 	 * console only output
+	 *
+	 * 初始化方法
 	 */
 	public void initialize(LoggingInitializationContext initializationContext, String configLocation, LogFile logFile) {
 	}
@@ -88,6 +94,8 @@ public abstract class LoggingSystem {
 	/**
 	 * Clean up the logging system. The default implementation does nothing. Subclasses
 	 * should override this method to perform any logging system-specific cleanup.
+	 *
+	 * 清理
 	 */
 	public void cleanUp() {
 	}
@@ -96,6 +104,8 @@ public abstract class LoggingSystem {
 	 * Returns a {@link Runnable} that can handle shutdown of this logging system when the
 	 * JVM exits. The default implementation returns {@code null}, indicating that no
 	 * shutdown is required.
+	 *
+	 * 获得 ShutdownHook 的 Runnable 对象
 	 * @return the shutdown handler, or {@code null}
 	 */
 	public Runnable getShutdownHandler() {
@@ -148,13 +158,18 @@ public abstract class LoggingSystem {
 	 * @return the logging system
 	 */
 	public static LoggingSystem get(ClassLoader classLoader) {
+		// 从系统参数 org.springframework.boot.logging.LoggingSystem 获得 loggingSystem 类型
 		String loggingSystem = System.getProperty(SYSTEM_PROPERTY);
+		// 如果非空，说明配置了
 		if (StringUtils.hasLength(loggingSystem)) {
+			// 如果实际 none，则创建 NoOpLoggingSystem 对象
 			if (NONE.equals(loggingSystem)) {
 				return new NoOpLoggingSystem();
 			}
+			// 获得 loggingSystem 对应的 LoggingSystem 类，进行创建对象
 			return get(classLoader, loggingSystem);
 		}
+		// 如果为空，说明未配置，则顺序查找 SYSTEMS 中的类。如果存在指定的类，则创建该类
 		return SYSTEMS.entrySet().stream().filter((entry) -> ClassUtils.isPresent(entry.getKey(), classLoader))
 				.map((entry) -> get(classLoader, entry.getValue())).findFirst()
 				.orElseThrow(() -> new IllegalStateException("No suitable logging system located"));

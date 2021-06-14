@@ -16,11 +16,6 @@
 
 package org.springframework.boot.context.properties;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -31,6 +26,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.annotation.AnnotationUtils;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Utility class to memorize {@code @Bean} definition metadata during initialization of
@@ -66,6 +66,7 @@ public class ConfigurationBeanFactoryMetadata implements ApplicationContextAware
 	}
 
 	public Method findFactoryMethod(String beanName) {
+		// 获取 Bean 工厂
 		ConfigurableListableBeanFactory beanFactory = this.applicationContext.getBeanFactory();
 		if (beanFactory.containsBeanDefinition(beanName)) {
 			BeanDefinition beanDefinition = beanFactory.getMergedBeanDefinition(beanName);

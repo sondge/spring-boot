@@ -16,14 +16,14 @@
 
 package org.springframework.boot.context.properties;
 
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 
 /**
  * Enable support for {@link ConfigurationProperties @ConfigurationProperties} annotated
@@ -48,6 +48,8 @@ public @interface EnableConfigurationProperties {
 
 	/**
 	 * Convenient way to quickly register
+	 *
+	 * 指定的类们
 	 * {@link ConfigurationProperties @ConfigurationProperties} annotated beans with
 	 * Spring. Standard Spring Beans will also be scanned regardless of this value.
 	 * @return {@code @ConfigurationProperties} annotated beans to register

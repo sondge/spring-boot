@@ -34,11 +34,14 @@ import org.springframework.util.ClassUtils;
  * @since 1.0.0
  */
 public class LiquibaseServiceLocatorApplicationListener implements ApplicationListener<ApplicationStartingEvent> {
-
+	/**
+	 * 日志系统
+	 */
 	private static final Log logger = LogFactory.getLog(LiquibaseServiceLocatorApplicationListener.class);
 
 	@Override
 	public void onApplicationEvent(ApplicationStartingEvent event) {
+		// 如果存在 CustomResolverServiceLocator 类
 		if (ClassUtils.isPresent("liquibase.servicelocator.CustomResolverServiceLocator",
 				event.getSpringApplication().getClassLoader())) {
 			new LiquibasePresent().replaceServiceLocator();
@@ -51,8 +54,10 @@ public class LiquibaseServiceLocatorApplicationListener implements ApplicationLi
 	private static class LiquibasePresent {
 
 		void replaceServiceLocator() {
+			// 创建 CustomResolverServiceLocator 对象
 			CustomResolverServiceLocator customResolverServiceLocator = new CustomResolverServiceLocator(
 					new SpringPackageScanClassResolver(logger));
+			// 设置 ServiceLocator 的 instance 属性
 			ServiceLocator.setInstance(customResolverServiceLocator);
 		}
 

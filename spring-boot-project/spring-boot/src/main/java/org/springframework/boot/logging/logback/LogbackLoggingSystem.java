@@ -16,15 +16,6 @@
 
 package org.springframework.boot.logging.logback;
 
-import java.net.URL;
-import java.security.CodeSource;
-import java.security.ProtectionDomain;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.logging.Handler;
-import java.util.logging.LogManager;
-
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
@@ -41,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.Marker;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.slf4j.impl.StaticLoggerBinder;
-
 import org.springframework.boot.logging.LogFile;
 import org.springframework.boot.logging.LogLevel;
 import org.springframework.boot.logging.LoggerConfiguration;
@@ -53,6 +43,15 @@ import org.springframework.core.env.Environment;
 import org.springframework.util.Assert;
 import org.springframework.util.ResourceUtils;
 import org.springframework.util.StringUtils;
+
+import java.net.URL;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Handler;
+import java.util.logging.LogManager;
 
 /**
  * {@link LoggingSystem} for <a href="https://logback.qos.ch">logback</a>.
@@ -95,17 +94,22 @@ public class LogbackLoggingSystem extends Slf4JLoggingSystem {
 	}
 
 	@Override
+	// 获得约定配置文件的数组
 	protected String[] getStandardConfigLocations() {
 		return new String[] { "logback-test.groovy", "logback-test.xml", "logback.groovy", "logback.xml" };
 	}
 
 	@Override
 	public void beforeInitialize() {
+		// 获得 LoggerContext 对象
 		LoggerContext loggerContext = getLoggerContext();
+		// 如果已初始化过，则直接返回
 		if (isAlreadyInitialized(loggerContext)) {
 			return;
 		}
+		// 调用父类方法
 		super.beforeInitialize();
+		// 添加 FILTER 到其中
 		loggerContext.getTurboFilterList().add(FILTER);
 	}
 
@@ -126,14 +130,18 @@ public class LogbackLoggingSystem extends Slf4JLoggingSystem {
 
 	@Override
 	protected void loadDefaults(LoggingInitializationContext initializationContext, LogFile logFile) {
+		//  1. 重置
 		LoggerContext context = getLoggerContext();
 		stopAndReset(context);
+		// 是否开启了 debug 级别
 		boolean debug = Boolean.getBoolean("logback.debug");
 		if (debug) {
 			StatusListenerConfigHelper.addOnConsoleListenerInstance(context, new OnConsoleStatusListener());
 		}
+		// 2. 创建 LogbackConfigurator 对象
 		LogbackConfigurator configurator = debug ? new DebugLogbackConfigurator(context)
 				: new LogbackConfigurator(context);
+		// 从 environment 中读取变量，设置到 context 中
 		Environment environment = initializationContext.getEnvironment();
 		context.putProperty(LoggingSystemProperties.LOG_LEVEL_PATTERN,
 				environment.resolvePlaceholders("${logging.pattern.level:${LOG_LEVEL_PATTERN:%5p}}"));
@@ -141,22 +149,28 @@ public class LogbackLoggingSystem extends Slf4JLoggingSystem {
 				"${logging.pattern.dateformat:${LOG_DATEFORMAT_PATTERN:yyyy-MM-dd HH:mm:ss.SSS}}"));
 		context.putProperty(LoggingSystemProperties.ROLLING_FILE_NAME_PATTERN, environment
 				.resolvePlaceholders("${logging.pattern.rolling-file-name:${LOG_FILE}.%d{yyyy-MM-dd}.%i.gz}"));
+		// 创建 DefaultLogbackConfiguration 并设置到 configurator 中
 		new DefaultLogbackConfiguration(initializationContext, logFile).apply(configurator);
+		// 设置日志文件，按天滚动
 		context.setPackagingDataEnabled(true);
 	}
 
 	@Override
 	protected void loadConfiguration(LoggingInitializationContext initializationContext, String location,
 			LogFile logFile) {
+		// 调用父方法
 		super.loadConfiguration(initializationContext, location, logFile);
+		// 重置
 		LoggerContext loggerContext = getLoggerContext();
 		stopAndReset(loggerContext);
 		try {
+			// 读取配置文件，并进行配置
 			configureByResourceUrl(initializationContext, loggerContext, ResourceUtils.getURL(location));
 		}
 		catch (Exception ex) {
 			throw new IllegalStateException("Could not initialize Logback logging from " + location, ex);
 		}
+		// 判断是否发生错误，如果有错误直接抛出 IllegalStateException
 		List<Status> statuses = loggerContext.getStatusManager().getCopyOfStatusList();
 		StringBuilder errors = new StringBuilder();
 		for (Status status : statuses) {
@@ -172,20 +186,26 @@ public class LogbackLoggingSystem extends Slf4JLoggingSystem {
 
 	private void configureByResourceUrl(LoggingInitializationContext initializationContext, LoggerContext loggerContext,
 			URL url) throws JoranException {
+		// 如果是 XML 格式的，则使用 SpringBootJoranConfigurator
 		if (url.toString().endsWith("xml")) {
 			JoranConfigurator configurator = new SpringBootJoranConfigurator(initializationContext);
 			configurator.setContext(loggerContext);
 			configurator.doConfigure(url);
 		}
+		// 其他格式使用 ContextInitializer
 		else {
 			new ContextInitializer(loggerContext).configureByResource(url);
 		}
 	}
 
 	private void stopAndReset(LoggerContext loggerContext) {
+		// 停止
 		loggerContext.stop();
+		// 重置
 		loggerContext.reset();
+		// 如果是 SLF4J 桥接
 		if (isBridgeHandlerInstalled()) {
+			// 添加 LevelChangePropagator
 			addLevelChangePropagator(loggerContext);
 		}
 	}
@@ -196,13 +216,17 @@ public class LogbackLoggingSystem extends Slf4JLoggingSystem {
 		}
 		java.util.logging.Logger rootLogger = LogManager.getLogManager().getLogger("");
 		Handler[] handlers = rootLogger.getHandlers();
+		// 判断 SLF4JBridgeHandler 唯一元素
 		return handlers.length == 1 && handlers[0] instanceof SLF4JBridgeHandler;
 	}
 
 	private void addLevelChangePropagator(LoggerContext loggerContext) {
+		// 创建 LevelChangePropagator  对象
 		LevelChangePropagator levelChangePropagator = new LevelChangePropagator();
+		// 设置属性
 		levelChangePropagator.setResetJUL(true);
 		levelChangePropagator.setContext(loggerContext);
+		// 添加 LevelChangePropagetor 到 loggerContext 中
 		loggerContext.addListener(levelChangePropagator);
 	}
 
@@ -217,8 +241,11 @@ public class LogbackLoggingSystem extends Slf4JLoggingSystem {
 
 	@Override
 	protected void reinitialize(LoggingInitializationContext initializationContext) {
+		// 重置
 		getLoggerContext().reset();
+		// 清除 StatuManager
 		getLoggerContext().getStatusManager().clear();
+		// 加载配置
 		loadConfiguration(initializationContext, getSelfInitializationConfig(), null);
 	}
 

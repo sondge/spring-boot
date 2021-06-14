@@ -16,9 +16,6 @@
 
 package org.springframework.boot.logging.logback;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
@@ -28,8 +25,10 @@ import ch.qos.logback.core.CoreConstants;
 import ch.qos.logback.core.pattern.Converter;
 import ch.qos.logback.core.spi.ContextAware;
 import ch.qos.logback.core.spi.LifeCycle;
-
 import org.springframework.util.Assert;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Allows programmatic configuration of logback which is usually faster than parsing XML.
@@ -59,15 +58,19 @@ class LogbackConfigurator {
 		Assert.notNull(converterClass, "Converter class must not be null");
 		Map<String, String> registry = (Map<String, String>) this.context
 				.getObject(CoreConstants.PATTERN_RULE_REGISTRY);
+		// 如果注册表为空，则进行注册
 		if (registry == null) {
 			registry = new HashMap<>();
 			this.context.putObject(CoreConstants.PATTERN_RULE_REGISTRY, registry);
 		}
+		// 添加转换规则到注册表中
 		registry.put(conversionWord, converterClass.getName());
 	}
 
 	void appender(String name, Appender<?> appender) {
+		// 设置 name
 		appender.setName(name);
+		// 启动 Appender
 		start(appender);
 	}
 
@@ -92,19 +95,24 @@ class LogbackConfigurator {
 
 	@SafeVarargs
 	final void root(Level level, Appender<ILoggingEvent>... appenders) {
+		// 获得 Root Logger 对象
 		Logger logger = this.context.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+		// 设置 Level
 		if (level != null) {
 			logger.setLevel(level);
 		}
+		// 添加 appender 到 logger 中
 		for (Appender<ILoggingEvent> appender : appenders) {
 			logger.addAppender(appender);
 		}
 	}
 
 	void start(LifeCycle lifeCycle) {
+		// 设置 context
 		if (lifeCycle instanceof ContextAware) {
 			((ContextAware) lifeCycle).setContext(this.context);
 		}
+		// 启动
 		lifeCycle.start();
 	}
 

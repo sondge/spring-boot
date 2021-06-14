@@ -38,13 +38,22 @@ public class AnsiOutputApplicationListener
 
 	@Override
 	public void onApplicationEvent(ApplicationEnvironmentPreparedEvent event) {
+//		if (true) {
+//			return;
+//		}
+		// 获取环境
 		ConfigurableEnvironment environment = event.getEnvironment();
+		// 根据环境变量 spring.output.ansi.enabled 的值，设置 AnsiOutput.enabled 属性
 		Binder.get(environment).bind("spring.output.ansi.enabled", AnsiOutput.Enabled.class)
 				.ifBound(AnsiOutput::setEnabled);
+		// 根据环境变量 "spring.output.ansi.console-available" 的值，设置 AnsiOutput.consoleAvailable 的属性
 		AnsiOutput.setConsoleAvailable(environment.getProperty("spring.output.ansi.console-available", Boolean.class));
 	}
 
 	@Override
+	/**
+	 * 获取排序
+	 */
 	public int getOrder() {
 		// Apply after ConfigFileApplicationListener has called EnvironmentPostProcessors
 		return ConfigFileApplicationListener.DEFAULT_ORDER + 1;

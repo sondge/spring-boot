@@ -61,7 +61,9 @@ public final class OriginTrackedMapPropertySource extends MapPropertySource impl
 
 	@Override
 	public Object getProperty(String name) {
+		// 获取属性值
 		Object value = super.getProperty(name);
+		// 如果是 OriginTrackedValue 类型的，则返回真实的值
 		if (value instanceof OriginTrackedValue) {
 			return ((OriginTrackedValue) value).getValue();
 		}
@@ -70,7 +72,9 @@ public final class OriginTrackedMapPropertySource extends MapPropertySource impl
 
 	@Override
 	public Origin getOrigin(String name) {
+		// 返回属性值
 		Object value = super.getProperty(name);
+		// 如果是 OriginTrackedValue 类型的值，则返回 Origin
 		if (value instanceof OriginTrackedValue) {
 			return ((OriginTrackedValue) value).getOrigin();
 		}

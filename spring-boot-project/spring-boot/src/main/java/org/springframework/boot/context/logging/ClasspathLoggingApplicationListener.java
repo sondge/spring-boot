@@ -16,18 +16,17 @@
 
 package org.springframework.boot.context.logging;
 
-import java.net.URLClassLoader;
-import java.util.Arrays;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.boot.context.event.ApplicationEnvironmentPreparedEvent;
 import org.springframework.boot.context.event.ApplicationFailedEvent;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.GenericApplicationListener;
 import org.springframework.context.event.SmartApplicationListener;
 import org.springframework.core.ResolvableType;
+
+import java.net.URLClassLoader;
+import java.util.Arrays;
 
 /**
  * A {@link SmartApplicationListener} that reacts to
@@ -40,16 +39,24 @@ import org.springframework.core.ResolvableType;
  */
 public final class ClasspathLoggingApplicationListener implements GenericApplicationListener {
 
+	/**
+	 * 获取顺序
+	 */
 	private static final int ORDER = LoggingApplicationListener.DEFAULT_ORDER + 1;
-
+	/**
+	 * 获取日志
+	 */
 	private static final Log logger = LogFactory.getLog(ClasspathLoggingApplicationListener.class);
 
 	@Override
 	public void onApplicationEvent(ApplicationEvent event) {
+		// 开启 debug 日志
 		if (logger.isDebugEnabled()) {
+			// 如果是 ApplicationEnvironmentPreparedEvent 事件，说明启动成功，打印成功到 debug 日志中
 			if (event instanceof ApplicationEnvironmentPreparedEvent) {
 				logger.debug("Application started with classpath: " + getClasspath());
 			}
+			// 如果是 ApplicationFailedEvent 时间，说明启动成功，打印失败日志到 debug 日志中
 			else if (event instanceof ApplicationFailedEvent) {
 				logger.debug("Application failed to start with classpath: " + getClasspath());
 			}
@@ -63,14 +70,17 @@ public final class ClasspathLoggingApplicationListener implements GenericApplica
 
 	@Override
 	public boolean supportsEventType(ResolvableType resolvableType) {
+		// 使用 ResolverType 类，可以解析当前传入的参数的泛型，从而后的时间类型
 		Class<?> type = resolvableType.getRawClass();
 		if (type == null) {
 			return false;
 		}
+		// 判断是否为 ApplicationEnvironmentPreparedEvent 或者 ApplicationFailedEvent 事件
 		return ApplicationEnvironmentPreparedEvent.class.isAssignableFrom(type)
 				|| ApplicationFailedEvent.class.isAssignableFrom(type);
 	}
 
+	// 获取 classpath
 	private String getClasspath() {
 		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 		if (classLoader instanceof URLClassLoader) {

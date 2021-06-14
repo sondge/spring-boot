@@ -55,13 +55,21 @@ public class RandomValuePropertySource extends PropertySource<Random> {
 
 	/**
 	 * Name of the random {@link PropertySource}.
+	 * random 属性资源名称
 	 */
 	public static final String RANDOM_PROPERTY_SOURCE_NAME = "random";
-
+	/**
+	 * random 资源前缀
+	 */
 	private static final String PREFIX = "random.";
-
+	/**
+	 * 获取日志信息
+	 */
 	private static final Log logger = LogFactory.getLog(RandomValuePropertySource.class);
 
+	/**
+	 * 构造方法
+	 */
 	public RandomValuePropertySource() {
 		this(RANDOM_PROPERTY_SOURCE_NAME);
 	}
@@ -72,22 +80,28 @@ public class RandomValuePropertySource extends PropertySource<Random> {
 
 	@Override
 	public Object getProperty(String name) {
+		// 如果名称不以 random 开头是否返回为空
 		if (!name.startsWith(PREFIX)) {
 			return null;
 		}
+		// 日志信息是否开启
 		if (logger.isTraceEnabled()) {
 			logger.trace("Generating random property for '" + name + "'");
 		}
+		// 获取 random 值
 		return getRandomValue(name.substring(PREFIX.length()));
 	}
 
 	private Object getRandomValue(String type) {
+		// 获取 int 值
 		if (type.equals("int")) {
 			return getSource().nextInt();
 		}
+		// 长整型
 		if (type.equals("long")) {
 			return getSource().nextLong();
 		}
+		// 返回中
 		String range = getRange(type, "int");
 		if (range != null) {
 			return getNextIntInRange(range);
@@ -96,9 +110,11 @@ public class RandomValuePropertySource extends PropertySource<Random> {
 		if (range != null) {
 			return getNextLongInRange(range);
 		}
+		// uuid 值
 		if (type.equals("uuid")) {
 			return UUID.randomUUID().toString();
 		}
+		// 随机数组
 		return getRandomBytes();
 	}
 
@@ -122,7 +138,7 @@ public class RandomValuePropertySource extends PropertySource<Random> {
 	}
 
 	private long getNextLongInRange(String range) {
-		String[] tokens = StringUtils.commaDelimitedListToStringArray(range);
+		String[] tokens = StringUtils.commaDelimitedListToStringArray(PropertySourcesPlaceholdersResolverrange);
 		if (tokens.length == 1) {
 			return Math.abs(getSource().nextLong() % Long.parseLong(tokens[0]));
 		}

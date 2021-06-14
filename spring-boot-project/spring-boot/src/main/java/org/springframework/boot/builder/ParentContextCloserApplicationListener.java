@@ -39,28 +39,38 @@ import org.springframework.util.ObjectUtils;
  */
 public class ParentContextCloserApplicationListener
 		implements ApplicationListener<ParentContextAvailableEvent>, ApplicationContextAware, Ordered {
-
+	/**
+	 * 获取顺序
+	 */
 	private int order = Ordered.LOWEST_PRECEDENCE - 10;
-
+	/**
+	 * 获取上下文
+	 */
 	private ApplicationContext context;
 
 	@Override
+	// 获取顺序
 	public int getOrder() {
 		return this.order;
 	}
 
 	@Override
+	// 设置应用上下文
 	public void setApplicationContext(ApplicationContext context) throws BeansException {
 		this.context = context;
 	}
 
 	@Override
+	// 事件
 	public void onApplicationEvent(ParentContextAvailableEvent event) {
+		// 可能安装父类的监听器
 		maybeInstallListenerInParent(event.getApplicationContext());
 	}
 
 	private void maybeInstallListenerInParent(ConfigurableApplicationContext child) {
+		// 如果 child 是当前容器，并且父容器是 ConfigurableApplicationContext，类型
 		if (child == this.context && child.getParent() instanceof ConfigurableApplicationContext) {
+			// 向容器添加监听器，监听父容器的关闭时间
 			ConfigurableApplicationContext parent = (ConfigurableApplicationContext) child.getParent();
 			parent.addApplicationListener(createContextCloserListener(child));
 		}
@@ -80,7 +90,7 @@ public class ParentContextCloserApplicationListener
 	 * {@link ApplicationListener} to close the context.
 	 */
 	protected static class ContextCloserListener implements ApplicationListener<ContextClosedEvent> {
-
+		// 虚引用
 		private WeakReference<ConfigurableApplicationContext> childContext;
 
 		public ContextCloserListener(ConfigurableApplicationContext childContext) {
@@ -90,7 +100,9 @@ public class ParentContextCloserApplicationListener
 		@Override
 		public void onApplicationEvent(ContextClosedEvent event) {
 			ConfigurableApplicationContext context = this.childContext.get();
+			// 如果是父容器，并且当前容器是启动状态
 			if ((context != null) && (event.getApplicationContext() == context.getParent()) && context.isActive()) {
+				// 关闭容器
 				context.close();
 			}
 		}

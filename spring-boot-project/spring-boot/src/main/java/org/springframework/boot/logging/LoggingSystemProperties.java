@@ -26,6 +26,8 @@ import org.springframework.util.Assert;
 /**
  * Utility to set system properties that can later be used by log configuration files.
  *
+ * 日志系统的配置类
+ *
  * @author Andy Wilkinson
  * @author Phillip Webb
  * @author Madhura Bhave
@@ -38,16 +40,22 @@ public class LoggingSystemProperties {
 
 	/**
 	 * The name of the System property that contains the process ID.
+	 *
+	 * 系统属性包含的执行 ID
 	 */
 	public static final String PID_KEY = "PID";
 
 	/**
 	 * The name of the System property that contains the exception conversion word.
+	 *
+	 * 系统属性包含的转换单词
 	 */
 	public static final String EXCEPTION_CONVERSION_WORD = "LOG_EXCEPTION_CONVERSION_WORD";
 
 	/**
 	 * The name of the System property that contains the log file.
+	 *
+	 * 系统属性的名称
 	 */
 	public static final String LOG_FILE = "LOG_FILE";
 
@@ -118,7 +126,9 @@ public class LoggingSystemProperties {
 	}
 
 	public void apply(LogFile logFile) {
+		// 获得 PropertyResolver 对象
 		PropertyResolver resolver = getPropertyResolver();
+		// 解析配置文件到系统属性中
 		setSystemProperty(resolver, EXCEPTION_CONVERSION_WORD, "exception-conversion-word");
 		setSystemProperty(PID_KEY, new ApplicationPid().toString());
 		setSystemProperty(resolver, CONSOLE_LOG_PATTERN, "pattern.console");
@@ -130,18 +140,22 @@ public class LoggingSystemProperties {
 		setSystemProperty(resolver, LOG_LEVEL_PATTERN, "pattern.level");
 		setSystemProperty(resolver, LOG_DATEFORMAT_PATTERN, "pattern.dateformat");
 		setSystemProperty(resolver, ROLLING_FILE_NAME_PATTERN, "pattern.rolling-file-name");
+		// 如果 logfile 非空，则应用配置
 		if (logFile != null) {
 			logFile.applyToSystemProperties();
 		}
 	}
 
 	private PropertyResolver getPropertyResolver() {
+		// 如果环境是 ConfigurableEnvironment 类型的
 		if (this.environment instanceof ConfigurableEnvironment) {
 			PropertySourcesPropertyResolver resolver = new PropertySourcesPropertyResolver(
 					((ConfigurableEnvironment) this.environment).getPropertySources());
 			resolver.setIgnoreUnresolvableNestedPlaceholders(true);
+			// 返回 环境中的解析器
 			return resolver;
 		}
+		// 直接返回环境
 		return this.environment;
 	}
 
